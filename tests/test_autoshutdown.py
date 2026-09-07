@@ -35,6 +35,13 @@ class CommandTests(unittest.TestCase):
         )
 
     @patch("autoshutdown.detect_os", return_value="windows")
+    def test_windows_logout(self, _):
+        self.assertEqual(
+            autoshutdown.command_for("logout"),
+            ["shutdown", "/l"],
+        )
+
+    @patch("autoshutdown.detect_os", return_value="windows")
     def test_windows_cancel(self, _):
         self.assertEqual(autoshutdown.command_for("cancel"), ["shutdown", "/a"])
 
@@ -50,6 +57,14 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(
             autoshutdown.command_for("restart", 30),
             ["shutdown", "-r", "now"],
+        )
+
+    @patch("autoshutdown.getpass.getuser", return_value="haniff")
+    @patch("autoshutdown.detect_os", return_value="linux")
+    def test_linux_logout(self, _, __):
+        self.assertEqual(
+            autoshutdown.command_for("logout"),
+            ["loginctl", "terminate-user", "haniff"],
         )
 
 
