@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""AutoShutdown - lightweight cross-platform shutdown scheduler."""
+"""AutoShutdown - lightweight cross-platform shutdown and logout scheduler."""
 
 from __future__ import annotations
 
 import argparse
+import getpass
 import platform
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 
 
@@ -64,12 +66,21 @@ def detect_os() -> str:
 
 
 def command_for(action: str, delay_seconds: int | None = None) -> list[str]:
+    """Build the native OS command for an action."""
     os_name = detect_os()
 
     if action == "cancel":
         if os_name == "windows":
             return ["shutdown", "/a"]
         return ["shutdown", "-c"]
+
+    if action == "logout":
+        if os_name == "windows":
+            return ["shutdown", "/l"]
+        return ["loginctl", "terminate-user", getpass.getuser()]
+
+    if action not in {"shutdown", "restart"}:
+        raise ValueError(f"Tindakan tidak disokong: {action}")
 
     if delay_seconds is None:
         raise ValueError("delay_seconds diperlukan untuk shutdown/restart")
@@ -105,21 +116,26 @@ def run_command(command: list[str], dry_run: bool) -> int:
 
     if completed.returncode != 0:
         print(
-            "Arahan gagal. Pada Linux, anda mungkin perlu menjalankan dengan sudo "
-            "atau menetapkan polisi kebenaran shutdown.",
+            "Arahan gagal. Pada Linux, anda mungkin memerlukan kebenaran sistem "
+            "yang sesuai untuk shutdown, restart atau logout.",
             file=sys.stderr,
         )
     return completed.returncode
 
 
+def wait_for_action(delay_seconds: int) -> None:
+    """Wait before an action that has no portable native scheduling support."""
+    time.sleep(delay_seconds)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="autoshutdown",
-        description="Jadualkan shutdown/restart komputer dengan mudah.",
+        description="Jadualkan shutdown, restart atau logout komputer dengan mudah.",
     )
     subparsers = parser.add_subparsers(dest="action", required=True)
 
-    for action in ("shutdown", "restart"):
+    for action in ("shutdown", "restart", "logout"):
         sub = subparsers.add_parser(action, help=f"Jadualkan {action}")
         timing = sub.add_mutually_exclusive_group(required=True)
         timing.add_argument("--in", dest="delay", type=parse_duration, help="Contoh: 30m, 2h")
@@ -142,15 +158,34 @@ def main() -> int:
         return run_command(command, args.dry_run)
 
     delay_seconds = args.delay if args.delay is not None else seconds_until(args.at_time)
-    command = command_for(args.action, delay_seconds)
-
-    verb = "Shutdown" if args.action == "shutdown" else "Restart"
     target = datetime.now() + timedelta(seconds=delay_seconds)
+
+    labels = {
+        "shutdown": "Shutdown",
+        "restart": "Restart",
+        "logout": "Logout",
+    }
+    verb = labels[args.action]
+
     print(
         f"{verb} dijadualkan dalam {human_duration(delay_seconds)} "
         f"(anggaran {target.strftime('%Y-%m-%d %H:%M:%S')})."
     )
 
+    if args.action == "logout":
+        command = command_for("logout")
+        if args.dry_run:
+            print(f"[DRY-RUN] Tunggu {delay_seconds} saat sebelum logout.")
+            return run_command(command, True)
+
+        try:
+            wait_for_action(delay_seconds)
+        except KeyboardInterrupt:
+            print("\nAutoLogout dibatalkan oleh pengguna.")
+            return 130
+        return run_command(command, False)
+
+    command = command_for(args.action, delay_seconds)
     return run_command(command, args.dry_run)
 
 
