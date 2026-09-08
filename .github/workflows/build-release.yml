@@ -23,7 +23,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
-            VERSION="0.2.0-dev.${GITHUB_RUN_NUMBER}"
+            VERSION="0.2.1-dev.${GITHUB_RUN_NUMBER}"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -32,10 +32,15 @@ jobs:
           chmod +x linux/build-deb.sh
           ./linux/build-deb.sh "${{ steps.version.outputs.version }}"
 
+      - name: Verify Debian package
+        run: |
+          test -n "$(find dist -maxdepth 1 -name '*.deb' -print -quit)"
+          dpkg-deb --info dist/*.deb >/dev/null
+
       - name: Upload Debian artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AutoShutdown-Linux-DEB
+          name: AutoShutdown-Linux-DEB-${{ steps.version.outputs.version }}
           path: dist/*.deb
 
   windows-exe:
@@ -44,6 +49,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve package version
+        id: version
+        shell: powershell
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $version = $env:GITHUB_REF_NAME.Substring(1)
+          } else {
+            $version = "0.2.1-dev.$env:GITHUB_RUN_NUMBER"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -51,10 +67,17 @@ jobs:
 
       - name: Build standalone EXE
         shell: powershell
-        run: .\windows\build.ps1
+        run: .\windows\build.ps1 -Version "${{ steps.version.outputs.version }}"
+
+      - name: Verify Windows artifact
+        shell: powershell
+        run: |
+          $artifact = "dist\AutoShutdown-${{ steps.version.outputs.version }}-Windows.exe"
+          if (-not (Test-Path $artifact)) { throw "Missing artifact: $artifact" }
+          Get-Item $artifact | Format-List Name,Length,LastWriteTime
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AutoShutdown-Windows-EXE
-          path: dist/AutoShutdown.exe
+          name: AutoShutdown-Windows-EXE-${{ steps.version.outputs.version }}
+          path: dist/AutoShutdown-${{ steps.version.outputs.version }}-Windows.exe
