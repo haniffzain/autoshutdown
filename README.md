@@ -2,9 +2,9 @@
 
 **AutoShutdown** is a compact desktop utility for scheduling power and application-control tasks on **Linux** and **Windows**.
 
-It started as a small utility in the **Hubuntu OS ecosystem**: a collection of focused tools designed to solve one job clearly, quickly and with minimal overhead.
+It is developed as part of the **Hubuntu OS software ecosystem**: small, focused utilities designed to solve one job clearly, quickly and with minimal overhead.
 
-## What AutoShutdown can do
+## Features
 
 - Timed **Shutdown**
 - Timed **Restart**
@@ -15,48 +15,52 @@ It started as a small utility in the **Hubuntu OS ecosystem**: a collection of f
 - Quick presets: **5m, 15m, 30m, 1h, 2h, 3h**
 - START / STOP controls
 - Password-protected settings
-- PBKDF2-SHA256 password hashing with a random salt
+- PBKDF2-SHA256 password hashing with random salt
 - Animated Unicode / ASCII cat mascot
-- Compact Tkinter desktop interface
+- Compact Tkinter desktop UI
 - CLI mode with `--dry-run`
 
 ---
 
-# Two platform builds
+# Platform Builds
 
-AutoShutdown keeps one shared Python engine while providing separate launch and installation paths for each platform.
+AutoShutdown uses one shared Python core while keeping separate install/build paths for Linux and Windows.
 
 ```text
 AutoShutdown/
 ├── linux/
 │   ├── install.sh
-│   └── run.sh
+│   ├── run.sh
+│   └── build-deb.sh
 ├── windows/
 │   ├── install.ps1
-│   └── run.bat
+│   ├── run.bat
+│   └── build.ps1
+├── .github/workflows/
+│   └── build-release.yml
 ├── gui.py
 ├── autoshutdown.py
 ├── requirements.txt
 └── README.md
 ```
 
-### Linux build
+### Linux
 
-Designed for Linux desktops including:
+Primary Linux targets:
 
 - Hubuntu / Ubuntu
+- Debian-based distributions
 - Arch Linux
 - Fedora
-- other modern Linux distributions using Python 3, Tk and systemd-compatible tools
 
-### Windows build
+### Windows
 
-Designed for:
+Primary Windows targets:
 
 - Windows 10
 - Windows 11
 
-The GUI is shared, while native shutdown, restart and logout commands are selected automatically for the detected operating system.
+The application automatically selects the appropriate native power/logout commands for the detected operating system.
 
 ---
 
@@ -64,175 +68,175 @@ The GUI is shared, while native shutdown, restart and logout commands are select
 
 ## Ubuntu / Hubuntu
 
-Install system requirements:
-
 ```bash
 sudo apt update
 sudo apt install -y git python3 python3-venv python3-tk
-```
-
-Clone AutoShutdown:
-
-```bash
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
-```
-
-Install the Python environment:
-
-```bash
 chmod +x linux/install.sh linux/run.sh
 ./linux/install.sh
-```
-
-Launch:
-
-```bash
 ./linux/run.sh
 ```
-
-You can also launch it manually:
-
-```bash
-source .venv/bin/activate
-python gui.py
-```
-
----
 
 ## Arch Linux
 
-Install system requirements:
-
 ```bash
 sudo pacman -S --needed git python tk
-```
-
-Clone and install:
-
-```bash
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
 chmod +x linux/install.sh linux/run.sh
 ./linux/install.sh
-```
-
-Launch:
-
-```bash
 ./linux/run.sh
 ```
-
----
 
 ## Fedora
 
-Install system requirements:
-
 ```bash
 sudo dnf install -y git python3 python3-tkinter
-```
-
-Clone and install:
-
-```bash
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
 chmod +x linux/install.sh linux/run.sh
 ./linux/install.sh
-```
-
-Launch:
-
-```bash
 ./linux/run.sh
 ```
 
----
-
 ## Windows 10 / 11
 
-### 1. Install Python
-
-Install a current Python 3 release and make sure **Add Python to PATH** is enabled during installation.
-
-Verify in PowerShell or Command Prompt:
-
-```powershell
-python --version
-```
-
-### 2. Install Git
-
-Install Git for Windows and verify:
-
-```powershell
-git --version
-```
-
-### 3. Clone AutoShutdown
+Install Python 3 and Git first, then run:
 
 ```powershell
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
-```
-
-### 4. Install the Windows environment
-
-From PowerShell:
-
-```powershell
 powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
-```
-
-### 5. Launch AutoShutdown
-
-```powershell
 .\windows\run.bat
-```
-
-Or manually:
-
-```powershell
-.\.venv\Scripts\python.exe gui.py
 ```
 
 ---
 
-# First launch
+# Packaged Builds
+
+AutoShutdown now includes initial release builders for Linux and Windows.
+
+## Build a Linux `.deb`
+
+On Hubuntu / Ubuntu / Debian:
+
+```bash
+cd autoshutdown
+chmod +x linux/build-deb.sh
+./linux/build-deb.sh 0.2.0
+```
+
+Output:
+
+```text
+dist/autoshutdown_0.2.0_all.deb
+```
+
+Install the package:
+
+```bash
+sudo apt install ./dist/autoshutdown_0.2.0_all.deb
+```
+
+Launch it from the desktop application menu or run:
+
+```bash
+autoshutdown
+```
+
+The Debian package declares these runtime dependencies:
+
+- `python3 >= 3.10`
+- `python3-tk`
+- `python3-psutil`
+
+## Build a standalone Windows `.exe`
+
+From PowerShell on Windows:
+
+```powershell
+cd autoshutdown
+powershell -ExecutionPolicy Bypass -File .\windows\build.ps1
+```
+
+Output:
+
+```text
+dist\AutoShutdown.exe
+```
+
+The Windows builder creates the executable with **PyInstaller** using one-file, windowed mode.
+
+---
+
+# Automatic GitHub Builds
+
+The repository includes:
+
+```text
+.github/workflows/build-release.yml
+```
+
+GitHub Actions builds two artifacts:
+
+- **AutoShutdown-Linux-DEB**
+- **AutoShutdown-Windows-EXE**
+
+The workflow runs when:
+
+- code is pushed to `main`
+- a version tag such as `v0.2.0` is pushed
+- the workflow is started manually
+
+For normal `main` builds, the Debian package receives a development version such as:
+
+```text
+0.2.0-dev.15
+```
+
+For a release tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+it produces version:
+
+```text
+0.2.0
+```
+
+---
+
+# First Launch & App Lock
 
 On first launch, AutoShutdown asks you to create an administrator password.
 
-The password protects changes such as:
+The password protects task changes, timer changes, application selection, restrictions, cancellation and password changes.
 
-- starting a new task
-- changing timers
-- selecting applications
-- starting app restrictions
-- cancelling protected tasks
-- changing the AutoShutdown password
+The original password is not stored as plaintext.
 
-The original password is **not stored as plaintext**.
-
-Security data is stored under the user's home directory:
+Security configuration is stored under the user's home directory:
 
 ```text
 ~/.autoshutdown/security.json
 ```
 
-The file contains a random salt and PBKDF2-SHA256 password hash.
+It contains a random salt and PBKDF2-SHA256 password hash.
 
 ---
 
-# Power timer
+# Power Timer
 
-Choose one of:
+Choose:
 
 - `shutdown`
 - `restart`
 - `logout`
 
-Then choose a preset or enter a custom duration such as:
+Then choose a preset or enter a duration such as:
 
 ```text
 30s
@@ -244,23 +248,23 @@ Then choose a preset or enter a custom duration such as:
 3h
 ```
 
-Press **START** to activate the countdown.
+Press **START** to activate the timer.
 
-The main header shows:
+Example active display:
 
 ```text
 ACTIVE   00:29:41   Shutdown
 ```
 
-Press **STOP** to cancel an active supported task.
+Press **STOP** to cancel a supported active task.
 
 ---
 
 # Timed Close App
 
-The **Close App** tab closes a selected process when its timer expires.
+The **Close App** tab closes a selected process when the timer expires.
 
-Example targets:
+Examples:
 
 ```text
 notepad.exe
@@ -269,43 +273,41 @@ firefox
 gnome-text-editor
 ```
 
-Process names differ between Linux and Windows.
-
-> Applications may contain unsaved work when they are closed.
+Applications can contain unsaved work when they are closed.
 
 ---
 
 # Timed Restrict App
 
-The **Restrict** tab temporarily prevents a selected application from remaining open.
+The **Restrict** tab temporarily prevents a selected process from staying open.
 
 You choose:
 
 1. application / process
-2. delay before restriction begins
+2. delay before restriction starts
 3. restriction duration
 
-While the restriction is active, AutoShutdown checks for the matching process and closes it when detected.
+During the restriction window, AutoShutdown checks for the matching process and closes it when detected.
 
-This is a temporary runtime restriction. It does **not** modify operating-system registry policies, file permissions or permanent security policies.
+This is a temporary runtime restriction. It does not permanently alter registry policy, permissions or operating-system security policy.
 
 ---
 
-# Platform behaviour
+# Platform Behaviour
 
 ## Linux
 
-AutoShutdown uses Linux-native facilities where appropriate:
+AutoShutdown uses:
 
 - shutdown / restart: `shutdown`
 - logout: `loginctl`
 - process control: `psutil`
 
-Some Linux systems may require appropriate system permissions for power-management actions.
+Some Linux environments may require appropriate system permissions for power-management operations.
 
 ## Windows
 
-AutoShutdown uses Windows-native facilities where appropriate:
+AutoShutdown uses:
 
 - shutdown: `shutdown /s`
 - restart: `shutdown /r`
@@ -315,11 +317,7 @@ AutoShutdown uses Windows-native facilities where appropriate:
 
 ---
 
-# Command-line mode
-
-The GUI is the primary interface, but AutoShutdown also includes a CLI.
-
-Examples:
+# CLI Mode
 
 ```bash
 python autoshutdown.py shutdown --in 30m
@@ -330,7 +328,7 @@ python autoshutdown.py logout --at 22:00
 python autoshutdown.py cancel
 ```
 
-Test a command without executing the power action:
+Safe command preview:
 
 ```bash
 python autoshutdown.py shutdown --in 5m --dry-run
@@ -338,70 +336,56 @@ python autoshutdown.py shutdown --in 5m --dry-run
 
 ---
 
-# Hubuntu OS ecosystem
+# Hubuntu OS Ecosystem
 
-AutoShutdown is developed as part of the wider **Hubuntu OS software direction**.
-
-Hubuntu is built around the idea that an operating environment can grow through small, focused utilities instead of forcing every feature into one large application.
-
-AutoShutdown demonstrates that approach:
+AutoShutdown is one of the small focused tools developed around the wider **Hubuntu OS software direction**.
 
 ```text
 Hubuntu OS
    │
-   ├── small focused utilities
+   ├── focused utilities
    │      ├── AutoShutdown
    │      ├── system tools
    │      ├── desktop utilities
    │      └── future Hubuntu applications
    │
-   └── one integrated desktop ecosystem
+   └── integrated desktop ecosystem
 ```
 
-Each utility should remain understandable on its own while still fitting naturally into the Hubuntu desktop environment.
+The idea is simple: each utility should remain small and understandable on its own while fitting naturally into the wider Hubuntu desktop environment.
 
 AutoShutdown can also run independently on standard Linux distributions and Windows.
 
 ---
 
-# Requirements
-
-Core requirements:
-
-- Python 3.10+
-- Tkinter / Tk
-- `psutil`
-
-Python dependency installation is handled by the included platform installers and `requirements.txt`.
-
----
-
-# Development status
+# Development Status
 
 | Feature | Status |
 |---|---|
-| Linux build | ✅ Available |
-| Windows build | ✅ Available |
-| Timed shutdown | ✅ |
-| Timed restart | ✅ |
-| Timed logout | ✅ |
+| Linux source build | ✅ Available |
+| Windows source build | ✅ Available |
+| Timed shutdown / restart / logout | ✅ |
 | Timed close app | ✅ |
 | Timed restrict app | ✅ |
 | Live countdown | ✅ |
 | Password App Lock | ✅ |
 | Compact GUI | ✅ |
 | Animated cat mascot | ✅ |
+| Debian `.deb` builder | ✅ Initial build |
+| Standalone Windows `.exe` builder | ✅ Initial build |
+| GitHub Actions artifact builds | ✅ Initial build |
+| Arch native package | Planned |
+| Fedora RPM package | Planned |
+| Windows installer (`.msi` / setup `.exe`) | Planned |
 | System tray | Planned |
 | Multiple simultaneous tasks | Planned |
 | Daily / weekly scheduler | Planned |
 | Startup integration | Planned |
 | Notification warnings | Planned |
-| Packaged `.deb` / Arch package / RPM | Planned |
-| Standalone Windows `.exe` | Planned |
 
 ---
 
-# Updating
+# Updating Source Installs
 
 Linux:
 
