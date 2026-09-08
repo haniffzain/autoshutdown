@@ -22,7 +22,7 @@ apps:
 parts:
   autoshutdown:
     plugin: python
-    source: ..
+    source: .
     python-requirements:
       - requirements.txt
     stage-packages:
@@ -39,6 +39,7 @@ parts:
       cp desktop_theme.py "$CRAFT_PART_INSTALL/desktop_theme.py"
       cp advanced_controller.py "$CRAFT_PART_INSTALL/advanced_controller.py"
       cp version.py "$CRAFT_PART_INSTALL/version.py"
+      cp update.py "$CRAFT_PART_INSTALL/update.py"
       cp -r core "$CRAFT_PART_INSTALL/core"
       mkdir -p "$CRAFT_PART_INSTALL/usr/share/applications"
       mkdir -p "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps"
