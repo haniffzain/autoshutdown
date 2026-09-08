@@ -27,12 +27,13 @@ Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $ARCH
-Depends: python3 (>= 3.10), python3-tk, python3-psutil
+Depends: python3 (>= 3.10), python3-tk, python3-psutil, python3-pil, python3-pystray
 Maintainer: Hubuntu OS Project
 Homepage: https://github.com/haniffzain/autoshutdown
 Description: Compact timed shutdown and application-control utility
- AutoShutdown provides timed shutdown, restart, logout, close-app and
- temporary restrict-app features through a compact desktop interface.
+ AutoShutdown provides timed shutdown, restart, logout, close-app,
+ temporary restrict-app, notifications and system-tray controls through
+ a compact desktop interface.
 EOF
 
 cat > "$BUILD_DIR/usr/bin/autoshutdown" <<'EOF'
@@ -52,9 +53,9 @@ Exec=autoshutdown
 Icon=autoshutdown
 Terminal=false
 Categories=Utility;System;
-Keywords=shutdown;logout;restart;timer;scheduler;restrict;close app;Hubuntu;
+Keywords=shutdown;logout;restart;timer;scheduler;restrict;close app;tray;Hubuntu;
 StartupNotify=true
-X-GNOME-UsesNotifications=false
+X-GNOME-UsesNotifications=true
 X-Hubuntu-Application=true
 X-Hubuntu-Version=$VERSION
 EOF
