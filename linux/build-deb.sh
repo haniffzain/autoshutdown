@@ -19,6 +19,7 @@ mkdir -p \
 
 install -m 0644 gui.py "$BUILD_DIR/opt/autoshutdown/gui.py"
 install -m 0644 autoshutdown.py "$BUILD_DIR/opt/autoshutdown/autoshutdown.py"
+install -m 0644 desktop_integration.py "$BUILD_DIR/opt/autoshutdown/desktop_integration.py"
 install -m 0644 assets/autoshutdown.svg "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg"
 
 cat > "$BUILD_DIR/DEBIAN/control" <<EOF
