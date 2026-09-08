@@ -11,7 +11,7 @@ import threading
 import time
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import psutil
 
@@ -41,6 +41,12 @@ CAT_ART = """⠀⠀⠀⠀⢠⡶⠚⢷⣤⡀⠀⠀⠀⠀⠀⣲⡶⠛⠻⣆
 ⠀⠀⠀⢸⡇⠀⢸⡆⠀⠀⠀⠀⣟⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⢸⣿⠀⠀⡇⠀⠀⠀⠀⣿⡀⠀⠀⠀⠀⠀⠀⠀⢀
 ⠀⠀⠀⠘⠿⠶⢶⢧⣦⣦⡴⢾⣥⣽⣤⣤⣤⣤⣤⣤⡴"""
+
+ABOUT_TEXT = (
+    "Hubuntu OS is the foundation behind AutoShutdown and a growing family of small, focused utilities.\n\n"
+    "Built on Ubuntu/Linux, Hubuntu is designed as a practical desktop platform where lightweight tools can be created, tested and integrated into one consistent environment.\n\n"
+    "AutoShutdown follows that idea: one small utility, one clear purpose, minimal overhead. Future Hubuntu utilities can follow the same approach for system control, productivity, monitoring and desktop automation."
+)
 
 
 def _hash_password(password: str, salt: bytes, iterations: int = PBKDF2_ITERATIONS) -> str:
@@ -88,8 +94,8 @@ class AutoShutdownGUI(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("AutoShutdown")
-        self.geometry("760x450")
-        self.minsize(720, 420)
+        self.geometry("760x370")
+        self.minsize(720, 350)
 
         self._cancel_event = threading.Event()
         self._worker: threading.Thread | None = None
@@ -116,9 +122,9 @@ class AutoShutdownGUI(tk.Tk):
         style.configure("Section.TLabel", font=("TkDefaultFont", 10, "bold"))
         style.configure("Countdown.TLabel", font=("TkFixedFont", 20, "bold"))
         style.configure("State.TLabel", font=("TkDefaultFont", 9, "bold"))
-        style.configure("Start.TButton", font=("TkDefaultFont", 9, "bold"), padding=(10, 4))
-        style.configure("Stop.TButton", font=("TkDefaultFont", 9, "bold"), padding=(10, 4))
-        style.configure("TNotebook.Tab", padding=(8, 3))
+        style.configure("Start.TButton", font=("TkDefaultFont", 9, "bold"), padding=(9, 3))
+        style.configure("Stop.TButton", font=("TkDefaultFont", 9, "bold"), padding=(9, 3))
+        style.configure("TNotebook.Tab", padding=(7, 2))
 
     def _build_ui(self) -> None:
         root = ttk.Frame(self, padding=6)
@@ -128,12 +134,12 @@ class AutoShutdownGUI(tk.Tk):
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
 
-        tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 10, "bold")).pack(pady=(8, 2))
+        tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 10, "bold")).pack(pady=(7, 1))
         self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg="#111317", fg="#f0f0f0", font=("DejaVu Sans Mono", 5))
-        self.cat_label.pack(padx=2, pady=(0, 2))
+        self.cat_label.pack(padx=2, pady=(0, 1))
         self.cat_message = tk.StringVar(value="guardian ready")
-        tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 8)).pack(pady=2)
-        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=8)
+        tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 8)).pack(pady=1)
+        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=6)
 
         main = ttk.Frame(root, padding=(8, 0, 0, 0))
         main.pack(side="left", fill="both", expand=True)
@@ -141,34 +147,35 @@ class AutoShutdownGUI(tk.Tk):
         header = ttk.Frame(main)
         header.pack(fill="x")
         ttk.Label(header, text="AutoShutdown", style="Title.TLabel").pack(side="left")
-        self.lock_button = ttk.Button(header, text="Unlock", width=8, command=self.unlock_app)
+        self.lock_button = ttk.Button(header, text="Unlock", width=7, command=self.unlock_app)
         self.lock_button.pack(side="right")
-        ttk.Button(header, text="Password", width=9, command=self.change_password).pack(side="right", padx=(0, 4))
+        ttk.Button(header, text="Password", width=8, command=self.change_password).pack(side="right", padx=(0, 3))
 
         status_box = ttk.Frame(main)
-        status_box.pack(fill="x", pady=(4, 4))
+        status_box.pack(fill="x", pady=(2, 3))
         self.state_var = tk.StringVar(value="READY")
         ttk.Label(status_box, textvariable=self.state_var, style="State.TLabel").pack(side="left")
         self.countdown_var = tk.StringVar(value="00:00:00")
-        ttk.Label(status_box, textvariable=self.countdown_var, style="Countdown.TLabel").pack(side="left", padx=(10, 8))
+        ttk.Label(status_box, textvariable=self.countdown_var, style="Countdown.TLabel").pack(side="left", padx=(9, 7))
         self.task_var = tk.StringVar(value="No active task")
         ttk.Label(status_box, textvariable=self.task_var, font=("TkDefaultFont", 8)).pack(side="left", fill="x", expand=True)
 
         self.notebook = ttk.Notebook(main)
-        self.notebook.pack(fill="both", expand=True)
+        self.notebook.pack(fill="x")
         self._build_power_tab()
         self._build_close_tab()
         self._build_restrict_tab()
+        self._build_about_tab()
 
         footer = ttk.Frame(main)
-        footer.pack(fill="x", pady=(4, 0))
+        footer.pack(fill="x", pady=(3, 0))
         self.status_var = tk.StringVar(value="Ready.")
         ttk.Label(footer, textvariable=self.status_var, font=("TkDefaultFont", 8)).pack(side="left", fill="x", expand=True)
-        ttk.Button(footer, text="STOP", width=8, style="Stop.TButton", command=self.cancel_active_task).pack(side="right")
+        ttk.Button(footer, text="STOP", width=7, style="Stop.TButton", command=self.cancel_active_task).pack(side="right")
 
     def _duration_row(self, parent: ttk.Frame, label: str, default: str) -> tk.StringVar:
         row = ttk.Frame(parent)
-        row.pack(fill="x", pady=3)
+        row.pack(fill="x", pady=2)
         ttk.Label(row, text=label, width=11).pack(side="left")
         value = tk.StringVar(value=default)
         ttk.Entry(row, textvariable=value, width=8).pack(side="left")
@@ -177,39 +184,45 @@ class AutoShutdownGUI(tk.Tk):
         return value
 
     def _build_power_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=7)
+        tab = ttk.Frame(self.notebook, padding=6)
         self.notebook.add(tab, text="Power")
-        ttk.Label(tab, text="Timed Shutdown / Logout", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(tab, text="Timed Shutdown / Logout", style="Section.TLabel").pack(anchor="w", pady=(0, 3))
 
         row = ttk.Frame(tab)
-        row.pack(fill="x", pady=3)
+        row.pack(fill="x", pady=2)
         ttk.Label(row, text="Action", width=11).pack(side="left")
         self.power_action = tk.StringVar(value="shutdown")
         ttk.Combobox(row, textvariable=self.power_action, values=("shutdown", "restart", "logout"), state="readonly", width=12).pack(side="left")
 
         self.power_delay = self._duration_row(tab, "Run after", "30m")
-        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_power).pack(anchor="w", pady=(6, 0))
+        ttk.Button(tab, text="START", width=8, style="Start.TButton", command=self.schedule_power).pack(anchor="w", pady=(4, 0))
 
     def _build_close_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=7)
+        tab = ttk.Frame(self.notebook, padding=6)
         self.notebook.add(tab, text="Close App")
-        ttk.Label(tab, text="Timed Close App", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(tab, text="Timed Close App", style="Section.TLabel").pack(anchor="w", pady=(0, 3))
         self.close_process = self._process_picker(tab)
         self.close_delay = self._duration_row(tab, "Close after", "15m")
-        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_close_app).pack(anchor="w", pady=(6, 0))
+        ttk.Button(tab, text="START", width=8, style="Start.TButton", command=self.schedule_close_app).pack(anchor="w", pady=(4, 0))
 
     def _build_restrict_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=7)
+        tab = ttk.Frame(self.notebook, padding=6)
         self.notebook.add(tab, text="Restrict")
-        ttk.Label(tab, text="Timed Restrict App", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(tab, text="Timed Restrict App", style="Section.TLabel").pack(anchor="w", pady=(0, 3))
         self.restrict_process = self._process_picker(tab)
         self.restrict_start = self._duration_row(tab, "Start after", "5m")
         self.restrict_duration = self._duration_row(tab, "Restrict for", "1h")
-        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_restrict_app).pack(anchor="w", pady=(6, 0))
+        ttk.Button(tab, text="START", width=8, style="Start.TButton", command=self.schedule_restrict_app).pack(anchor="w", pady=(4, 0))
+
+    def _build_about_tab(self) -> None:
+        tab = ttk.Frame(self.notebook, padding=7)
+        self.notebook.add(tab, text="About")
+        ttk.Label(tab, text="Hubuntu OS", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(tab, text=ABOUT_TEXT, wraplength=535, justify="left", font=("TkDefaultFont", 8)).pack(anchor="w")
 
     def _process_picker(self, parent: ttk.Frame) -> tk.StringVar:
         row = ttk.Frame(parent)
-        row.pack(fill="x", pady=3)
+        row.pack(fill="x", pady=2)
         ttk.Label(row, text="Application", width=11).pack(side="left")
         value = tk.StringVar()
         ttk.Entry(row, textvariable=value, width=20).pack(side="left", fill="x", expand=True)
@@ -223,6 +236,45 @@ class AutoShutdownGUI(tk.Tk):
         if path:
             variable.set(os.path.basename(path))
 
+    def _ask_password(self, title: str, prompt: str) -> str | None:
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.transient(self)
+        dialog.resizable(False, False)
+        dialog.grab_set()
+
+        result: dict[str, str | None] = {"value": None}
+        frame = ttk.Frame(dialog, padding=10)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=prompt).pack(anchor="w")
+        entry = ttk.Entry(frame, show="*", width=24)
+        entry.pack(fill="x", pady=(5, 8))
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(anchor="e")
+
+        def submit() -> None:
+            result["value"] = entry.get()
+            dialog.destroy()
+
+        def cancel() -> None:
+            dialog.destroy()
+
+        ttk.Button(buttons, text="Cancel", width=7, command=cancel).pack(side="right")
+        ttk.Button(buttons, text="OK", width=7, command=submit).pack(side="right", padx=(0, 4))
+        dialog.bind("<Return>", lambda _e: submit())
+        dialog.bind("<Escape>", lambda _e: cancel())
+
+        dialog.update_idletasks()
+        width = 285
+        height = 120
+        x = self.winfo_rootx() + max(0, (self.winfo_width() - width) // 2)
+        y = self.winfo_rooty() + max(0, (self.winfo_height() - height) // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        entry.focus_set()
+        self.wait_window(dialog)
+        return result["value"]
+
     def _ensure_password(self) -> None:
         if password_is_configured():
             self._unlocked = False
@@ -230,14 +282,17 @@ class AutoShutdownGUI(tk.Tk):
             return
         messagebox.showinfo("Create Password", "Create an AutoShutdown administrator password.")
         while not password_is_configured():
-            first = simpledialog.askstring("New Password", "Enter password:", show="*")
+            first = self._ask_password("New Password", "Enter password")
             if first is None:
-                self.destroy(); return
+                self.destroy()
+                return
             if len(first) < 6:
-                messagebox.showerror("Too Short", "Use at least 6 characters."); continue
-            second = simpledialog.askstring("Confirm Password", "Enter password again:", show="*")
+                messagebox.showerror("Too Short", "Use at least 6 characters.")
+                continue
+            second = self._ask_password("Confirm Password", "Enter password again")
             if first != second:
-                messagebox.showerror("Mismatch", "Passwords do not match."); continue
+                messagebox.showerror("Mismatch", "Passwords do not match.")
+                continue
             set_password(first)
             self._unlocked = True
             self._update_lock_ui()
@@ -245,8 +300,9 @@ class AutoShutdownGUI(tk.Tk):
     def unlock_app(self) -> None:
         if self._unlocked:
             self._unlocked = False
-            self._update_lock_ui(); return
-        password = simpledialog.askstring("Unlock AutoShutdown", "Password:", show="*")
+            self._update_lock_ui()
+            return
+        password = self._ask_password("Unlock AutoShutdown", "Password")
         if password is None:
             return
         if verify_password(password):
@@ -267,16 +323,19 @@ class AutoShutdownGUI(tk.Tk):
         return False
 
     def change_password(self) -> None:
-        current = simpledialog.askstring("Change Password", "Current password:", show="*")
+        current = self._ask_password("Change Password", "Current password")
         if current is None or not verify_password(current):
-            if current is not None: messagebox.showerror("Access Denied", "Incorrect password.")
+            if current is not None:
+                messagebox.showerror("Access Denied", "Incorrect password.")
             return
-        new = simpledialog.askstring("Change Password", "New password:", show="*")
+        new = self._ask_password("Change Password", "New password")
         if not new or len(new) < 6:
-            messagebox.showerror("Invalid Password", "Use at least 6 characters."); return
-        confirm = simpledialog.askstring("Change Password", "Confirm new password:", show="*")
+            messagebox.showerror("Invalid Password", "Use at least 6 characters.")
+            return
+        confirm = self._ask_password("Change Password", "Confirm new password")
         if new != confirm:
-            messagebox.showerror("Mismatch", "Passwords do not match."); return
+            messagebox.showerror("Mismatch", "Passwords do not match.")
+            return
         set_password(new)
         self._set_status("Password changed.")
 
@@ -327,9 +386,11 @@ class AutoShutdownGUI(tk.Tk):
         return True
 
     def schedule_power(self) -> None:
-        if not self._require_unlock(): return
+        if not self._require_unlock():
+            return
         delay = self._parse_duration(self.power_delay.get(), "Run after")
-        if delay is None: return
+        if delay is None:
+            return
         action = self.power_action.get()
         if self._start_worker(self._power_worker, action, delay):
             self._activate_task(action.title(), delay)
@@ -345,35 +406,43 @@ class AutoShutdownGUI(tk.Tk):
         autoshutdown.run_command(autoshutdown.command_for("logout"), False)
 
     def schedule_close_app(self) -> None:
-        if not self._require_unlock(): return
+        if not self._require_unlock():
+            return
         process = self.close_process.get().strip()
         if not process:
-            messagebox.showerror("Application Required", "Select or enter an application."); return
+            messagebox.showerror("Application Required", "Select or enter an application.")
+            return
         delay = self._parse_duration(self.close_delay.get(), "Close after")
-        if delay is None: return
+        if delay is None:
+            return
         if self._start_worker(self._close_worker, process, delay):
             self._activate_task(f"Close {process}", delay)
 
     def _close_worker(self, process: str, delay: int) -> None:
-        if self._cancel_event.wait(delay): return
+        if self._cancel_event.wait(delay):
+            return
         count = self._terminate_processes(process)
         self.after(0, self._finish_task, f"Closed {count} matching process(es).")
 
     def schedule_restrict_app(self) -> None:
-        if not self._require_unlock(): return
+        if not self._require_unlock():
+            return
         process = self.restrict_process.get().strip()
         if not process:
-            messagebox.showerror("Application Required", "Select or enter an application."); return
+            messagebox.showerror("Application Required", "Select or enter an application.")
+            return
         start = self._parse_duration(self.restrict_start.get(), "Start after")
         duration = self._parse_duration(self.restrict_duration.get(), "Restrict for")
-        if start is None or duration is None or duration <= 0: return
+        if start is None or duration is None or duration <= 0:
+            return
         if not messagebox.askyesno("Start Restriction?", f"{process} will be closed whenever detected during the restriction period."):
             return
         if self._start_worker(self._restrict_worker, process, start, duration):
             self._activate_task(f"Restrict {process}", start + duration)
 
     def _restrict_worker(self, process: str, start: int, duration: int) -> None:
-        if self._cancel_event.wait(start): return
+        if self._cancel_event.wait(start):
+            return
         deadline = time.monotonic() + duration
         while time.monotonic() < deadline and not self._cancel_event.is_set():
             self._terminate_processes(process)
@@ -388,8 +457,10 @@ class AutoShutdownGUI(tk.Tk):
         current_pid = os.getpid()
         for proc in psutil.process_iter(["pid", "name"]):
             try:
-                if proc.info.get("pid") == current_pid: continue
-                if (proc.info.get("name") or "").casefold() != wanted: continue
+                if proc.info.get("pid") == current_pid:
+                    continue
+                if (proc.info.get("name") or "").casefold() != wanted:
+                    continue
                 proc.terminate()
                 try:
                     proc.wait(timeout=2)
@@ -401,7 +472,8 @@ class AutoShutdownGUI(tk.Tk):
         return count
 
     def cancel_active_task(self) -> None:
-        if not self._require_unlock(): return
+        if not self._require_unlock():
+            return
         self._cancel_event.set()
         try:
             autoshutdown.run_command(autoshutdown.command_for("cancel"), False)
