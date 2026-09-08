@@ -125,20 +125,19 @@ On Hubuntu / Ubuntu / Debian:
 
 ```bash
 cd autoshutdown
-chmod +x linux/build-deb.sh
-./linux/build-deb.sh 0.2.0
+bash linux/build-deb.sh 0.2.1
 ```
 
 Output:
 
 ```text
-dist/autoshutdown_0.2.0_all.deb
+dist/autoshutdown_0.2.1_all.deb
 ```
 
-Install the package:
+Install or upgrade the package:
 
 ```bash
-sudo apt install ./dist/autoshutdown_0.2.0_all.deb
+sudo apt install ./dist/autoshutdown_0.2.1_all.deb
 ```
 
 Launch it from the desktop application menu or run:
@@ -176,6 +175,7 @@ The Debian package declares these runtime dependencies:
 ```bash
 which autoshutdown
 dpkg -L autoshutdown
+dpkg -s autoshutdown | grep Version
 autoshutdown
 ```
 
@@ -184,11 +184,11 @@ autoshutdown
 Build a newer version and install it over the old package:
 
 ```bash
-./linux/build-deb.sh 0.2.1
+bash linux/build-deb.sh 0.2.1
 sudo apt install ./dist/autoshutdown_0.2.1_all.deb
 ```
 
-APT should treat this as a normal package upgrade.
+APT treats this as a normal package upgrade. The `0.2.0 -> 0.2.1` upgrade path has been tested successfully on Hubuntu.
 
 ### Remove the package
 
@@ -206,23 +206,30 @@ From PowerShell on Windows:
 
 ```powershell
 cd autoshutdown
-powershell -ExecutionPolicy Bypass -File .\windows\build.ps1
+powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Version 0.2.1
 ```
 
-Output:
+Outputs:
 
 ```text
 dist\AutoShutdown.exe
+dist\AutoShutdown-0.2.1-Windows.exe
 ```
 
 The Windows builder uses **PyInstaller** in one-file, windowed mode so the application can run without opening a console window.
 
-The Windows release path is being polished for:
+The generated executable now includes Windows version-resource metadata:
 
-- executable version metadata
-- application icon
-- clean product naming
-- future installer packaging
+- CompanyName: `Hubuntu OS Project`
+- ProductName: `AutoShutdown`
+- FileDescription: `AutoShutdown desktop utility`
+- FileVersion / ProductVersion: supplied build version
+- OriginalFilename: `AutoShutdown.exe`
+- License metadata: MIT
+
+The build script also validates that the executable exists and reports its final size before completing.
+
+A dedicated Windows application icon and installer package remain planned release-polish items.
 
 ---
 
@@ -234,35 +241,39 @@ The repository includes:
 .github/workflows/build-release.yml
 ```
 
-GitHub Actions builds two artifacts:
+GitHub Actions builds and validates two versioned artifacts:
 
-- **AutoShutdown-Linux-DEB**
-- **AutoShutdown-Windows-EXE**
+```text
+AutoShutdown-Linux-DEB-<version>
+AutoShutdown-Windows-EXE-<version>
+```
 
 The workflow runs when:
 
 - code is pushed to `main`
-- a version tag such as `v0.2.0` is pushed
+- a version tag such as `v0.2.1` is pushed
 - the workflow is started manually
 
-For normal `main` builds, the Debian package receives a development version such as:
+For normal `main` builds, artifacts receive development versions such as:
 
 ```text
-0.2.0-dev.15
+0.2.1-dev.15
 ```
 
 For a release tag:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
-it produces version:
+it produces release version:
 
 ```text
-0.2.0
+0.2.1
 ```
+
+The Linux CI job verifies the generated Debian package with `dpkg-deb --info`. The Windows CI job verifies that the versioned executable was created before uploading it.
 
 ---
 
@@ -428,12 +439,16 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 | Compact GUI | ✅ |
 | Animated cat mascot | ✅ |
 | Debian `.deb` builder | ✅ Tested on Hubuntu |
+| Linux package upgrade | ✅ 0.2.0 → 0.2.1 tested |
 | Linux desktop launcher | ✅ |
 | Linux application icon | ✅ |
-| Standalone Windows `.exe` builder | ✅ Initial build |
-| GitHub Actions artifact builds | ✅ Initial build |
+| Standalone Windows `.exe` builder | ✅ |
+| Windows executable metadata | ✅ |
+| Versioned Windows release artifact | ✅ |
+| GitHub Actions artifact validation | ✅ |
 | Arch native package | Planned |
 | Fedora RPM package | Planned |
+| Windows application icon | Planned |
 | Windows installer (`.msi` / setup `.exe`) | Planned |
 | System tray | Planned |
 | Multiple simultaneous tasks | Planned |
@@ -443,21 +458,23 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 
 ---
 
-# Release v0.2.0 direction
+# Release v0.2.1 direction
 
-The `v0.2.0` milestone focuses on turning AutoShutdown from a source-only utility into a distributable desktop application.
+The `v0.2.1` milestone focuses on turning AutoShutdown into a reproducible, distributable desktop application for both Linux and Windows.
 
-Current v0.2.0 release work includes:
+Current release work includes:
 
 - tested Hubuntu / Ubuntu `.deb` package
-- Linux desktop launcher
-- Linux application icon
-- polished package metadata
+- successful package upgrade from `0.2.0` to `0.2.1`
+- Linux desktop launcher and application icon
+- polished Linux package metadata
 - Windows one-file executable builder
-- automated GitHub artifact builds
+- Windows version-resource metadata
+- versioned Windows release artifact
+- automated GitHub artifact build validation
 - release-oriented README documentation
 
-The next release tasks are Windows executable metadata/icon polishing and final release tagging.
+Remaining polish before a broader release includes a dedicated Windows icon and a conventional Windows installer.
 
 ---
 
