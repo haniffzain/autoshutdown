@@ -28,6 +28,8 @@ AutoShutdown uses one shared Python core while keeping separate install/build pa
 
 ```text
 AutoShutdown/
+├── assets/
+│   └── autoshutdown.svg
 ├── linux/
 │   ├── install.sh
 │   ├── run.sh
@@ -115,9 +117,9 @@ powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
 
 # Packaged Builds
 
-AutoShutdown now includes initial release builders for Linux and Windows.
+AutoShutdown includes release builders for Linux and Windows.
 
-## Build a Linux `.deb`
+## Linux `.deb` package
 
 On Hubuntu / Ubuntu / Debian:
 
@@ -145,13 +147,60 @@ Launch it from the desktop application menu or run:
 autoshutdown
 ```
 
+The Debian package installs:
+
+```text
+/opt/autoshutdown/gui.py
+/opt/autoshutdown/autoshutdown.py
+/usr/bin/autoshutdown
+/usr/share/applications/autoshutdown.desktop
+/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg
+```
+
+The application menu entry includes:
+
+- AutoShutdown application icon
+- `Shutdown Scheduler` generic name
+- desktop search keywords for shutdown, restart, logout, timer and app restriction
+- Hubuntu-specific metadata
+- desktop startup notification metadata
+
 The Debian package declares these runtime dependencies:
 
 - `python3 >= 3.10`
 - `python3-tk`
 - `python3-psutil`
 
-## Build a standalone Windows `.exe`
+### Test an installed Linux package
+
+```bash
+which autoshutdown
+dpkg -L autoshutdown
+autoshutdown
+```
+
+### Upgrade an existing package
+
+Build a newer version and install it over the old package:
+
+```bash
+./linux/build-deb.sh 0.2.1
+sudo apt install ./dist/autoshutdown_0.2.1_all.deb
+```
+
+APT should treat this as a normal package upgrade.
+
+### Remove the package
+
+```bash
+sudo apt remove autoshutdown
+```
+
+User password configuration under `~/.autoshutdown/` is intentionally not removed by the Debian package uninstall process.
+
+---
+
+## Standalone Windows `.exe`
 
 From PowerShell on Windows:
 
@@ -166,7 +215,14 @@ Output:
 dist\AutoShutdown.exe
 ```
 
-The Windows builder creates the executable with **PyInstaller** using one-file, windowed mode.
+The Windows builder uses **PyInstaller** in one-file, windowed mode so the application can run without opening a console window.
+
+The Windows release path is being polished for:
+
+- executable version metadata
+- application icon
+- clean product naming
+- future installer packaging
 
 ---
 
@@ -371,7 +427,9 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 | Password App Lock | ✅ |
 | Compact GUI | ✅ |
 | Animated cat mascot | ✅ |
-| Debian `.deb` builder | ✅ Initial build |
+| Debian `.deb` builder | ✅ Tested on Hubuntu |
+| Linux desktop launcher | ✅ |
+| Linux application icon | ✅ |
 | Standalone Windows `.exe` builder | ✅ Initial build |
 | GitHub Actions artifact builds | ✅ Initial build |
 | Arch native package | Planned |
@@ -382,6 +440,24 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 | Daily / weekly scheduler | Planned |
 | Startup integration | Planned |
 | Notification warnings | Planned |
+
+---
+
+# Release v0.2.0 direction
+
+The `v0.2.0` milestone focuses on turning AutoShutdown from a source-only utility into a distributable desktop application.
+
+Current v0.2.0 release work includes:
+
+- tested Hubuntu / Ubuntu `.deb` package
+- Linux desktop launcher
+- Linux application icon
+- polished package metadata
+- Windows one-file executable builder
+- automated GitHub artifact builds
+- release-oriented README documentation
+
+The next release tasks are Windows executable metadata/icon polishing and final release tagging.
 
 ---
 
