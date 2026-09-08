@@ -18,10 +18,12 @@ It is developed as part of the **Hubuntu OS software ecosystem**: small, focused
 - PBKDF2-SHA256 password hashing with random salt
 - Animated Unicode / ASCII cat mascot
 - Compact Tkinter desktop UI
+- **Automatic desktop light/dark theme matching**
 - **System tray integration**
 - **Hide to Tray** behaviour
 - Tray menu: **Open / Hide / Stop Task / Exit**
 - Desktop notifications when a task starts and when one minute remains
+- Full **MIT License** available inside the About tab
 - CLI mode with `--dry-run`
 
 ---
@@ -34,6 +36,11 @@ AutoShutdown uses one shared Python core while keeping separate install/build pa
 AutoShutdown/
 ├── assets/
 │   └── autoshutdown.svg
+├── core/
+│   ├── history_store.py
+│   ├── scheduler_store.py
+│   ├── startup.py
+│   └── task_manager.py
 ├── linux/
 │   ├── install.sh
 │   ├── run.sh
@@ -45,9 +52,11 @@ AutoShutdown/
 ├── .github/workflows/
 │   └── build-release.yml
 ├── desktop_integration.py
+├── desktop_theme.py
 ├── gui.py
 ├── autoshutdown.py
 ├── requirements.txt
+├── LICENSE
 └── README.md
 ```
 
@@ -64,6 +73,29 @@ AutoShutdown/
 - Windows 11
 
 The application automatically selects the appropriate native power/logout commands for the detected operating system.
+
+---
+
+# Desktop Theme Matching
+
+AutoShutdown now follows the desktop's light/dark preference instead of forcing its own fixed colour scheme.
+
+On **Hubuntu / Ubuntu / GNOME**, AutoShutdown checks the GNOME desktop colour preference through `gsettings` and uses the current GTK theme as a fallback.
+
+On **Windows**, it reads the current application light/dark preference from the user's Windows theme settings.
+
+The detected theme is applied to:
+
+- application background
+- side mascot panel
+- labels and status text
+- buttons
+- entries and comboboxes
+- notebook tabs
+- password dialogs
+- MIT License viewer
+
+The theme is detected when AutoShutdown starts. Restart AutoShutdown after changing the desktop theme to apply the new tone.
 
 ---
 
@@ -118,7 +150,7 @@ powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
 
 # Desktop Integration Phase
 
-AutoShutdown now includes a cross-platform tray layer in:
+AutoShutdown includes a cross-platform tray layer in:
 
 ```text
 desktop_integration.py
@@ -189,6 +221,7 @@ The Debian package installs:
 /opt/autoshutdown/gui.py
 /opt/autoshutdown/autoshutdown.py
 /opt/autoshutdown/desktop_integration.py
+/opt/autoshutdown/desktop_theme.py
 /usr/bin/autoshutdown
 /usr/share/applications/autoshutdown.desktop
 /usr/share/icons/hicolor/scalable/apps/autoshutdown.svg
@@ -237,7 +270,7 @@ dist\AutoShutdown.exe
 dist\AutoShutdown-0.3.0-Windows.exe
 ```
 
-The Windows builder uses **PyInstaller** in one-file, windowed mode and includes imported tray dependencies automatically.
+The Windows builder uses **PyInstaller** in one-file, windowed mode and includes imported tray/theme dependencies automatically.
 
 Windows executable metadata includes:
 
@@ -354,6 +387,7 @@ AutoShutdown uses:
 - logout: `loginctl`
 - process control: `psutil`
 - tray integration: `pystray`
+- desktop theme preference: GNOME `gsettings`
 
 Some Linux environments may require appropriate system permissions for power-management operations.
 
@@ -367,6 +401,7 @@ AutoShutdown uses:
 - cancel scheduled shutdown/restart: `shutdown /a`
 - process control: `psutil`
 - tray integration: `pystray`
+- desktop theme preference: Windows user theme settings
 
 ---
 
@@ -420,6 +455,8 @@ Each utility should remain small and understandable on its own while fitting nat
 | Live countdown | ✅ |
 | Password App Lock | ✅ |
 | Compact GUI | ✅ |
+| Desktop light/dark tone matching | ✅ |
+| In-app MIT License viewer | ✅ |
 | Animated cat mascot | ✅ |
 | Debian `.deb` builder | ✅ Tested on Hubuntu |
 | Linux package upgrade | ✅ 0.2.0 → 0.2.1 tested |
@@ -431,44 +468,25 @@ Each utility should remain small and understandable on its own while fitting nat
 | Hide to Tray | ✅ |
 | Tray task status | ✅ |
 | Desktop timer warnings | ✅ Initial build |
-| Arch native package | Planned |
-| Fedora RPM package | Planned |
 | Windows application icon | Planned |
 | Windows installer | Planned |
-| Multiple simultaneous tasks | Planned |
-| Daily / weekly scheduler | **Next phase** |
-| Startup integration | Planned |
-| Persistent task history | Planned |
+| Multiple simultaneous tasks | Core added; UI integration pending |
+| Daily / weekly scheduler | Core added; UI integration pending |
+| Startup integration | Core added; UI integration pending |
+| Persistent task history | Core added; UI integration pending |
 
 ---
 
-# Phase Direction
+# Current Development Direction
 
-### Completed packaging phase
+The core modules for the next major phase have already been added:
 
-- Hubuntu `.deb`
-- Windows `.exe` builder
-- package metadata
-- GitHub build workflow
+- `core/task_manager.py`
+- `core/scheduler_store.py`
+- `core/startup.py`
+- `core/history_store.py`
 
-### Current phase — Desktop Integration
-
-- system tray
-- Hide to Tray
-- tray task state
-- notifications
-- protected tray Stop Task
-
-### Next phase — Scheduler
-
-Planned next:
-
-- daily schedules
-- weekly schedules
-- selected weekdays
-- saved schedules
-- enable / disable schedule entries
-- persistent schedule storage
+The next GUI integration phase will expose these through dedicated **Tasks**, **Schedule**, **History** and **Settings** tabs.
 
 ---
 
@@ -497,4 +515,9 @@ git pull
 
 # License
 
-MIT License.
+AutoShutdown is released under the **MIT License**.
+
+The complete license text is available in:
+
+- the repository `LICENSE` file
+- the application's **About → View License** window
