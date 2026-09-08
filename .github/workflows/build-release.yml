@@ -16,10 +16,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve package version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.2.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build Debian package
         run: |
           chmod +x linux/build-deb.sh
-          ./linux/build-deb.sh "${GITHUB_REF_NAME#v}"
+          ./linux/build-deb.sh "${{ steps.version.outputs.version }}"
 
       - name: Upload Debian artifact
         uses: actions/upload-artifact@v4
