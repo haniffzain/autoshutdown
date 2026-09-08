@@ -1,0 +1,57 @@
+name: autoshutdown
+base: core24
+version: '0.4.0'
+summary: Timed shutdown and application-control utility
+description: |
+  AutoShutdown is a compact desktop utility for scheduling shutdown,
+  restart, logout, timed application closing and temporary restrictions.
+  It is part of the Hubuntu OS software ecosystem and supports system tray,
+  desktop notifications, password-protected settings and saved schedules.
+
+grade: devel
+confinement: classic
+license: MIT
+
+apps:
+  autoshutdown:
+    command: bin/python3 $SNAP/gui.py
+    desktop: usr/share/applications/autoshutdown.desktop
+    environment:
+      PYTHONPATH: $SNAP:$SNAP/lib/python3.12/site-packages
+
+parts:
+  autoshutdown:
+    plugin: python
+    source: ..
+    python-requirements:
+      - requirements.txt
+    stage-packages:
+      - python3-tk
+      - libx11-6
+      - libxext6
+      - libxrender1
+      - libxcb1
+    override-build: |
+      craftctl default
+      cp gui.py "$CRAFT_PART_INSTALL/gui.py"
+      cp autoshutdown.py "$CRAFT_PART_INSTALL/autoshutdown.py"
+      cp desktop_integration.py "$CRAFT_PART_INSTALL/desktop_integration.py"
+      cp desktop_theme.py "$CRAFT_PART_INSTALL/desktop_theme.py"
+      cp advanced_controller.py "$CRAFT_PART_INSTALL/advanced_controller.py"
+      cp version.py "$CRAFT_PART_INSTALL/version.py"
+      cp -r core "$CRAFT_PART_INSTALL/core"
+      mkdir -p "$CRAFT_PART_INSTALL/usr/share/applications"
+      mkdir -p "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps"
+      cp assets/autoshutdown.svg "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg"
+      cat > "$CRAFT_PART_INSTALL/usr/share/applications/autoshutdown.desktop" <<'EOF'
+      [Desktop Entry]
+      Type=Application
+      Name=AutoShutdown
+      GenericName=Shutdown Scheduler
+      Comment=Schedule shutdown, restart, logout and application-control tasks
+      Exec=autoshutdown
+      Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg
+      Terminal=false
+      Categories=Utility;System;
+      Keywords=shutdown;restart;logout;timer;scheduler;Hubuntu;
+      EOF
