@@ -20,6 +20,7 @@ mkdir -p \
 install -m 0644 gui.py "$BUILD_DIR/opt/autoshutdown/gui.py"
 install -m 0644 autoshutdown.py "$BUILD_DIR/opt/autoshutdown/autoshutdown.py"
 install -m 0644 desktop_integration.py "$BUILD_DIR/opt/autoshutdown/desktop_integration.py"
+install -m 0644 desktop_theme.py "$BUILD_DIR/opt/autoshutdown/desktop_theme.py"
 install -m 0644 assets/autoshutdown.svg "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg"
 
 cat > "$BUILD_DIR/DEBIAN/control" <<EOF
@@ -33,8 +34,8 @@ Maintainer: Hubuntu OS Project
 Homepage: https://github.com/haniffzain/autoshutdown
 Description: Compact timed shutdown and application-control utility
  AutoShutdown provides timed shutdown, restart, logout, close-app,
- temporary restrict-app, notifications and system-tray controls through
- a compact desktop interface.
+ temporary restrict-app, notifications, system-tray controls and automatic
+ desktop light/dark theme matching through a compact desktop interface.
 EOF
 
 cat > "$BUILD_DIR/usr/bin/autoshutdown" <<'EOF'
