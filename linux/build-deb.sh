@@ -14,10 +14,12 @@ mkdir -p \
   "$BUILD_DIR/DEBIAN" \
   "$BUILD_DIR/opt/autoshutdown" \
   "$BUILD_DIR/usr/bin" \
-  "$BUILD_DIR/usr/share/applications"
+  "$BUILD_DIR/usr/share/applications" \
+  "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps"
 
 install -m 0644 gui.py "$BUILD_DIR/opt/autoshutdown/gui.py"
 install -m 0644 autoshutdown.py "$BUILD_DIR/opt/autoshutdown/autoshutdown.py"
+install -m 0644 assets/autoshutdown.svg "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg"
 
 cat > "$BUILD_DIR/DEBIAN/control" <<EOF
 Package: autoshutdown
@@ -27,6 +29,7 @@ Priority: optional
 Architecture: $ARCH
 Depends: python3 (>= 3.10), python3-tk, python3-psutil
 Maintainer: Hubuntu OS Project
+Homepage: https://github.com/haniffzain/autoshutdown
 Description: Compact timed shutdown and application-control utility
  AutoShutdown provides timed shutdown, restart, logout, close-app and
  temporary restrict-app features through a compact desktop interface.
@@ -38,15 +41,22 @@ exec python3 /opt/autoshutdown/gui.py "$@"
 EOF
 chmod 0755 "$BUILD_DIR/usr/bin/autoshutdown"
 
-cat > "$BUILD_DIR/usr/share/applications/autoshutdown.desktop" <<'EOF'
+cat > "$BUILD_DIR/usr/share/applications/autoshutdown.desktop" <<EOF
 [Desktop Entry]
 Type=Application
+Version=1.0
 Name=AutoShutdown
-Comment=Timed shutdown and application control
+GenericName=Shutdown Scheduler
+Comment=Schedule shutdown, logout, restart and application-control tasks
 Exec=autoshutdown
+Icon=autoshutdown
 Terminal=false
 Categories=Utility;System;
+Keywords=shutdown;logout;restart;timer;scheduler;restrict;close app;Hubuntu;
 StartupNotify=true
+X-GNOME-UsesNotifications=false
+X-Hubuntu-Application=true
+X-Hubuntu-Version=$VERSION
 EOF
 
 mkdir -p "$ROOT_DIR/dist"
