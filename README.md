@@ -18,6 +18,10 @@ It is developed as part of the **Hubuntu OS software ecosystem**: small, focused
 - PBKDF2-SHA256 password hashing with random salt
 - Animated Unicode / ASCII cat mascot
 - Compact Tkinter desktop UI
+- **System tray integration**
+- **Hide to Tray** behaviour
+- Tray menu: **Open / Hide / Stop Task / Exit**
+- Desktop notifications when a task starts and when one minute remains
 - CLI mode with `--dry-run`
 
 ---
@@ -40,24 +44,21 @@ AutoShutdown/
 │   └── build.ps1
 ├── .github/workflows/
 │   └── build-release.yml
+├── desktop_integration.py
 ├── gui.py
 ├── autoshutdown.py
 ├── requirements.txt
 └── README.md
 ```
 
-### Linux
-
-Primary Linux targets:
+### Linux targets
 
 - Hubuntu / Ubuntu
 - Debian-based distributions
 - Arch Linux
 - Fedora
 
-### Windows
-
-Primary Windows targets:
+### Windows targets
 
 - Windows 10
 - Windows 11
@@ -115,9 +116,45 @@ powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
 
 ---
 
-# Packaged Builds
+# Desktop Integration Phase
 
-AutoShutdown includes release builders for Linux and Windows.
+AutoShutdown now includes a cross-platform tray layer in:
+
+```text
+desktop_integration.py
+```
+
+The tray menu provides:
+
+```text
+Open AutoShutdown
+Hide Window
+Stop Task
+Exit
+```
+
+Pressing the window close button hides AutoShutdown to the tray when tray support is available. Use **Exit** from the tray menu to fully close the application.
+
+The tray title follows the active task and countdown, for example:
+
+```text
+AutoShutdown - Shutdown - 00:14:52
+```
+
+AutoShutdown sends a desktop notification when a task is scheduled and another warning when the timer reaches approximately one minute remaining.
+
+Tray controls do not bypass App Lock. Stopping a protected task from the tray returns to the main window and still requires the normal password unlock flow.
+
+Tray support uses:
+
+- `pystray`
+- `Pillow`
+
+If tray support is unavailable, the **Tray** button falls back to normal window minimization.
+
+---
+
+# Packaged Builds
 
 ## Linux `.deb` package
 
@@ -125,22 +162,22 @@ On Hubuntu / Ubuntu / Debian:
 
 ```bash
 cd autoshutdown
-bash linux/build-deb.sh 0.2.1
+bash linux/build-deb.sh 0.3.0
 ```
 
 Output:
 
 ```text
-dist/autoshutdown_0.2.1_all.deb
+dist/autoshutdown_0.3.0_all.deb
 ```
 
-Install or upgrade the package:
+Install or upgrade:
 
 ```bash
-sudo apt install ./dist/autoshutdown_0.2.1_all.deb
+sudo apt install ./dist/autoshutdown_0.3.0_all.deb
 ```
 
-Launch it from the desktop application menu or run:
+Launch from the desktop menu or run:
 
 ```bash
 autoshutdown
@@ -151,26 +188,21 @@ The Debian package installs:
 ```text
 /opt/autoshutdown/gui.py
 /opt/autoshutdown/autoshutdown.py
+/opt/autoshutdown/desktop_integration.py
 /usr/bin/autoshutdown
 /usr/share/applications/autoshutdown.desktop
 /usr/share/icons/hicolor/scalable/apps/autoshutdown.svg
 ```
 
-The application menu entry includes:
-
-- AutoShutdown application icon
-- `Shutdown Scheduler` generic name
-- desktop search keywords for shutdown, restart, logout, timer and app restriction
-- Hubuntu-specific metadata
-- desktop startup notification metadata
-
-The Debian package declares these runtime dependencies:
+Runtime dependencies include:
 
 - `python3 >= 3.10`
 - `python3-tk`
 - `python3-psutil`
+- `python3-pil`
+- `python3-pystray`
 
-### Test an installed Linux package
+Test an installed package:
 
 ```bash
 which autoshutdown
@@ -179,24 +211,13 @@ dpkg -s autoshutdown | grep Version
 autoshutdown
 ```
 
-### Upgrade an existing package
-
-Build a newer version and install it over the old package:
-
-```bash
-bash linux/build-deb.sh 0.2.1
-sudo apt install ./dist/autoshutdown_0.2.1_all.deb
-```
-
-APT treats this as a normal package upgrade. The `0.2.0 -> 0.2.1` upgrade path has been tested successfully on Hubuntu.
-
-### Remove the package
+Remove the package:
 
 ```bash
 sudo apt remove autoshutdown
 ```
 
-User password configuration under `~/.autoshutdown/` is intentionally not removed by the Debian package uninstall process.
+User configuration under `~/.autoshutdown/` is intentionally retained during package removal.
 
 ---
 
@@ -206,19 +227,19 @@ From PowerShell on Windows:
 
 ```powershell
 cd autoshutdown
-powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Version 0.2.1
+powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Version 0.3.0
 ```
 
 Outputs:
 
 ```text
 dist\AutoShutdown.exe
-dist\AutoShutdown-0.2.1-Windows.exe
+dist\AutoShutdown-0.3.0-Windows.exe
 ```
 
-The Windows builder uses **PyInstaller** in one-file, windowed mode so the application can run without opening a console window.
+The Windows builder uses **PyInstaller** in one-file, windowed mode and includes imported tray dependencies automatically.
 
-The generated executable now includes Windows version-resource metadata:
+Windows executable metadata includes:
 
 - CompanyName: `Hubuntu OS Project`
 - ProductName: `AutoShutdown`
@@ -226,10 +247,6 @@ The generated executable now includes Windows version-resource metadata:
 - FileVersion / ProductVersion: supplied build version
 - OriginalFilename: `AutoShutdown.exe`
 - License metadata: MIT
-
-The build script also validates that the executable exists and reports its final size before completing.
-
-A dedicated Windows application icon and installer package remain planned release-polish items.
 
 ---
 
@@ -241,39 +258,16 @@ The repository includes:
 .github/workflows/build-release.yml
 ```
 
-GitHub Actions builds and validates two versioned artifacts:
+GitHub Actions builds and validates versioned artifacts for Linux and Windows.
 
-```text
-AutoShutdown-Linux-DEB-<version>
-AutoShutdown-Windows-EXE-<version>
-```
-
-The workflow runs when:
-
-- code is pushed to `main`
-- a version tag such as `v0.2.1` is pushed
-- the workflow is started manually
-
-For normal `main` builds, artifacts receive development versions such as:
-
-```text
-0.2.1-dev.15
-```
-
-For a release tag:
+A release tag such as:
 
 ```bash
-git tag v0.2.1
-git push origin v0.2.1
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
-it produces release version:
-
-```text
-0.2.1
-```
-
-The Linux CI job verifies the generated Debian package with `dpkg-deb --info`. The Windows CI job verifies that the versioned executable was created before uploading it.
+produces versioned build artifacts through the workflow.
 
 ---
 
@@ -283,9 +277,7 @@ On first launch, AutoShutdown asks you to create an administrator password.
 
 The password protects task changes, timer changes, application selection, restrictions, cancellation and password changes.
 
-The original password is not stored as plaintext.
-
-Security configuration is stored under the user's home directory:
+The original password is not stored as plaintext. Security configuration is stored at:
 
 ```text
 ~/.autoshutdown/security.json
@@ -315,15 +307,7 @@ Then choose a preset or enter a duration such as:
 3h
 ```
 
-Press **START** to activate the timer.
-
-Example active display:
-
-```text
-ACTIVE   00:29:41   Shutdown
-```
-
-Press **STOP** to cancel a supported active task.
+Press **START** to activate the timer. Press **STOP** to cancel a supported active task.
 
 ---
 
@@ -369,6 +353,7 @@ AutoShutdown uses:
 - shutdown / restart: `shutdown`
 - logout: `loginctl`
 - process control: `psutil`
+- tray integration: `pystray`
 
 Some Linux environments may require appropriate system permissions for power-management operations.
 
@@ -381,6 +366,7 @@ AutoShutdown uses:
 - logout: `shutdown /l`
 - cancel scheduled shutdown/restart: `shutdown /a`
 - process control: `psutil`
+- tray integration: `pystray`
 
 ---
 
@@ -391,7 +377,6 @@ python autoshutdown.py shutdown --in 30m
 python autoshutdown.py shutdown --at 23:30
 python autoshutdown.py restart --in 10m
 python autoshutdown.py logout --in 15m
-python autoshutdown.py logout --at 22:00
 python autoshutdown.py cancel
 ```
 
@@ -419,9 +404,7 @@ Hubuntu OS
    └── integrated desktop ecosystem
 ```
 
-The idea is simple: each utility should remain small and understandable on its own while fitting naturally into the wider Hubuntu desktop environment.
-
-AutoShutdown can also run independently on standard Linux distributions and Windows.
+Each utility should remain small and understandable on its own while fitting naturally into the wider Hubuntu desktop environment.
 
 ---
 
@@ -429,8 +412,8 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 
 | Feature | Status |
 |---|---|
-| Linux source build | ✅ Available |
-| Windows source build | ✅ Available |
+| Linux source build | ✅ |
+| Windows source build | ✅ |
 | Timed shutdown / restart / logout | ✅ |
 | Timed close app | ✅ |
 | Timed restrict app | ✅ |
@@ -440,41 +423,52 @@ AutoShutdown can also run independently on standard Linux distributions and Wind
 | Animated cat mascot | ✅ |
 | Debian `.deb` builder | ✅ Tested on Hubuntu |
 | Linux package upgrade | ✅ 0.2.0 → 0.2.1 tested |
-| Linux desktop launcher | ✅ |
-| Linux application icon | ✅ |
+| Linux desktop launcher/icon | ✅ |
 | Standalone Windows `.exe` builder | ✅ |
 | Windows executable metadata | ✅ |
-| Versioned Windows release artifact | ✅ |
 | GitHub Actions artifact validation | ✅ |
+| System tray | ✅ Initial cross-platform build |
+| Hide to Tray | ✅ |
+| Tray task status | ✅ |
+| Desktop timer warnings | ✅ Initial build |
 | Arch native package | Planned |
 | Fedora RPM package | Planned |
 | Windows application icon | Planned |
-| Windows installer (`.msi` / setup `.exe`) | Planned |
-| System tray | Planned |
+| Windows installer | Planned |
 | Multiple simultaneous tasks | Planned |
-| Daily / weekly scheduler | Planned |
+| Daily / weekly scheduler | **Next phase** |
 | Startup integration | Planned |
-| Notification warnings | Planned |
+| Persistent task history | Planned |
 
 ---
 
-# Release v0.2.1 direction
+# Phase Direction
 
-The `v0.2.1` milestone focuses on turning AutoShutdown into a reproducible, distributable desktop application for both Linux and Windows.
+### Completed packaging phase
 
-Current release work includes:
+- Hubuntu `.deb`
+- Windows `.exe` builder
+- package metadata
+- GitHub build workflow
 
-- tested Hubuntu / Ubuntu `.deb` package
-- successful package upgrade from `0.2.0` to `0.2.1`
-- Linux desktop launcher and application icon
-- polished Linux package metadata
-- Windows one-file executable builder
-- Windows version-resource metadata
-- versioned Windows release artifact
-- automated GitHub artifact build validation
-- release-oriented README documentation
+### Current phase — Desktop Integration
 
-Remaining polish before a broader release includes a dedicated Windows icon and a conventional Windows installer.
+- system tray
+- Hide to Tray
+- tray task state
+- notifications
+- protected tray Stop Task
+
+### Next phase — Scheduler
+
+Planned next:
+
+- daily schedules
+- weekly schedules
+- selected weekdays
+- saved schedules
+- enable / disable schedule entries
+- persistent schedule storage
 
 ---
 
