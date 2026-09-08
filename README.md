@@ -2,35 +2,30 @@
 
 **AutoShutdown** is a compact desktop utility for scheduling power and application-control tasks on **Linux** and **Windows**.
 
-It is developed as part of the **Hubuntu OS software ecosystem**: small, focused utilities designed to solve one job clearly, quickly and with minimal overhead.
+It is developed as part of the **Hubuntu OS software ecosystem**: small, focused utilities designed to solve one job clearly with minimal overhead.
 
-## Features
+## Current features
 
-- Timed **Shutdown**
-- Timed **Restart**
-- Timed **Logout**
-- Timed **Close App**
-- Timed **Restrict App**
-- Live countdown display
-- Quick presets: **5m, 15m, 30m, 1h, 2h, 3h**
-- START / STOP controls
-- Password-protected settings
-- PBKDF2-SHA256 password hashing with random salt
-- Animated Unicode / ASCII cat mascot
-- Compact Tkinter desktop UI
-- **Automatic desktop light/dark theme matching**
-- **System tray integration**
-- **Hide to Tray** behaviour
-- Tray menu: **Open / Hide / Stop Task / Exit**
-- Desktop notifications when a task starts and when one minute remains
-- Full **MIT License** available inside the About tab
-- CLI mode with `--dry-run`
+- Timed **Shutdown / Restart / Logout**
+- Timed **Close App** and temporary **Restrict App**
+- Multiple-task engine
+- Daily / weekly scheduler core
+- Persistent task history
+- User-level startup integration
+- Live countdown and quick presets
+- Password-protected settings using PBKDF2-SHA256
+- System tray and Hide to Tray
+- Desktop notifications
+- Automatic desktop light/dark tone matching
+- Animated Unicode cat mascot
+- Full MIT License inside the app
+- GitHub release update checker
+- Git source auto-update with safe `git pull --ff-only`
+- Linux `.deb`, Windows `.exe`, and Snap packaging paths
 
 ---
 
-# Platform Builds
-
-AutoShutdown uses one shared Python core while keeping separate install/build paths for Linux and Windows.
+# Project layout
 
 ```text
 AutoShutdown/
@@ -40,77 +35,45 @@ AutoShutdown/
 │   ├── history_store.py
 │   ├── scheduler_store.py
 │   ├── startup.py
-│   └── task_manager.py
+│   ├── task_manager.py
+│   └── update_checker.py
 ├── linux/
 │   ├── install.sh
 │   ├── run.sh
 │   └── build-deb.sh
+├── snap/
+│   └── snapcraft.yaml
 ├── windows/
 │   ├── install.ps1
 │   ├── run.bat
 │   └── build.ps1
-├── .github/workflows/
-│   └── build-release.yml
+├── advanced_controller.py
 ├── desktop_integration.py
 ├── desktop_theme.py
 ├── gui.py
 ├── autoshutdown.py
+├── update.py
+├── version.py
 ├── requirements.txt
 ├── LICENSE
 └── README.md
 ```
 
-### Linux targets
-
-- Hubuntu / Ubuntu
-- Debian-based distributions
-- Arch Linux
-- Fedora
-
-### Windows targets
-
-- Windows 10
-- Windows 11
-
-The application automatically selects the appropriate native power/logout commands for the detected operating system.
-
 ---
 
-# Desktop Theme Matching
+# Quick source install
 
-AutoShutdown now follows the desktop's light/dark preference instead of forcing its own fixed colour scheme.
-
-On **Hubuntu / Ubuntu / GNOME**, AutoShutdown checks the GNOME desktop colour preference through `gsettings` and uses the current GTK theme as a fallback.
-
-On **Windows**, it reads the current application light/dark preference from the user's Windows theme settings.
-
-The detected theme is applied to:
-
-- application background
-- side mascot panel
-- labels and status text
-- buttons
-- entries and comboboxes
-- notebook tabs
-- password dialogs
-- MIT License viewer
-
-The theme is detected when AutoShutdown starts. Restart AutoShutdown after changing the desktop theme to apply the new tone.
-
----
-
-# Quick Install
-
-## Ubuntu / Hubuntu
+## Hubuntu / Ubuntu
 
 ```bash
 sudo apt update
 sudo apt install -y git python3 python3-venv python3-tk
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
-chmod +x linux/install.sh linux/run.sh
-./linux/install.sh
-./linux/run.sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python gui.py
 ```
 
 ## Arch Linux
@@ -119,9 +82,10 @@ chmod +x linux/install.sh linux/run.sh
 sudo pacman -S --needed git python tk
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
-chmod +x linux/install.sh linux/run.sh
-./linux/install.sh
-./linux/run.sh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python gui.py
 ```
 
 ## Fedora
@@ -130,14 +94,13 @@ chmod +x linux/install.sh linux/run.sh
 sudo dnf install -y git python3 python3-tkinter
 git clone https://github.com/haniffzain/autoshutdown.git
 cd autoshutdown
-chmod +x linux/install.sh linux/run.sh
-./linux/install.sh
-./linux/run.sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python gui.py
 ```
 
 ## Windows 10 / 11
-
-Install Python 3 and Git first, then run:
 
 ```powershell
 git clone https://github.com/haniffzain/autoshutdown.git
@@ -148,368 +111,254 @@ powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
 
 ---
 
-# Desktop Integration Phase
+# Auto-update architecture
 
-AutoShutdown includes a cross-platform tray layer in:
+AutoShutdown does **not** blindly replace itself from the `main` branch for every installation type. Each package uses the update channel appropriate for that installation.
 
-```text
-desktop_integration.py
+## Git source install
+
+The updater can safely update a clean Git checkout using fast-forward only:
+
+```bash
+python update.py --apply
 ```
 
-The tray menu provides:
+Internally this uses:
 
 ```text
-Open AutoShutdown
-Hide Window
-Stop Task
-Exit
+git status --porcelain
+git pull --ff-only
 ```
 
-Pressing the window close button hides AutoShutdown to the tray when tray support is available. Use **Exit** from the tray menu to fully close the application.
+If local files have uncommitted changes, the updater stops instead of overwriting them.
 
-The tray title follows the active task and countdown, for example:
+Check the latest published GitHub release without applying anything:
+
+```bash
+python update.py --check
+```
+
+## Snap install
+
+Snap installations are updated by **snapd** through the Snap Store refresh mechanism. AutoShutdown detects the Snap environment and does not attempt to overwrite files inside the snap.
+
+Manual refresh when needed:
+
+```bash
+sudo snap refresh autoshutdown
+```
+
+## Debian `.deb`
+
+The installed package contains the update checker:
+
+```bash
+autoshutdown-update --check
+```
+
+A `.deb` installation should ultimately update through an APT repository or a verified GitHub Release package. It does not silently replace `/opt/autoshutdown` from `main`.
+
+## Windows `.exe`
+
+Windows builds check GitHub Releases. Automatic installer replacement is kept separate from the source updater so a future signed Windows installer can perform controlled upgrades.
+
+The update service is implemented in:
 
 ```text
-AutoShutdown - Shutdown - 00:14:52
+core/update_checker.py
+update.py
 ```
 
-AutoShutdown sends a desktop notification when a task is scheduled and another warning when the timer reaches approximately one minute remaining.
+The published-version source is:
 
-Tray controls do not bypass App Lock. Stopping a protected task from the tray returns to the main window and still requires the normal password unlock flow.
-
-Tray support uses:
-
-- `pystray`
-- `Pillow`
-
-If tray support is unavailable, the **Tray** button falls back to normal window minimization.
+```text
+https://github.com/haniffzain/autoshutdown/releases/latest
+```
 
 ---
 
-# Packaged Builds
+# Linux `.deb` package
 
-## Linux `.deb` package
-
-On Hubuntu / Ubuntu / Debian:
+Build:
 
 ```bash
-cd autoshutdown
-bash linux/build-deb.sh 0.3.0
+bash linux/build-deb.sh 0.4.0
 ```
 
 Output:
 
 ```text
-dist/autoshutdown_0.3.0_all.deb
+dist/autoshutdown_0.4.0_all.deb
 ```
 
-Install or upgrade:
+Install / upgrade:
 
 ```bash
-sudo apt install ./dist/autoshutdown_0.3.0_all.deb
+sudo apt install ./dist/autoshutdown_0.4.0_all.deb
 ```
 
-Launch from the desktop menu or run:
+Useful commands:
 
 ```bash
 autoshutdown
-```
-
-The Debian package installs:
-
-```text
-/opt/autoshutdown/gui.py
-/opt/autoshutdown/autoshutdown.py
-/opt/autoshutdown/desktop_integration.py
-/opt/autoshutdown/desktop_theme.py
-/usr/bin/autoshutdown
-/usr/share/applications/autoshutdown.desktop
-/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg
-```
-
-Runtime dependencies include:
-
-- `python3 >= 3.10`
-- `python3-tk`
-- `python3-psutil`
-- `python3-pil`
-- `python3-pystray`
-
-Test an installed package:
-
-```bash
-which autoshutdown
-dpkg -L autoshutdown
+autoshutdown-update --check
 dpkg -s autoshutdown | grep Version
-autoshutdown
 ```
 
-Remove the package:
-
-```bash
-sudo apt remove autoshutdown
-```
-
-User configuration under `~/.autoshutdown/` is intentionally retained during package removal.
+The package installs the application under `/opt/autoshutdown`, exposes `/usr/bin/autoshutdown`, and installs its desktop launcher/icon.
 
 ---
 
-## Standalone Windows `.exe`
+# Windows standalone build
 
-From PowerShell on Windows:
+From Windows PowerShell:
 
 ```powershell
-cd autoshutdown
-powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Version 0.3.0
+powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Version 0.4.0
 ```
 
-Outputs:
+Expected outputs:
 
 ```text
 dist\AutoShutdown.exe
-dist\AutoShutdown-0.3.0-Windows.exe
+dist\AutoShutdown-0.4.0-Windows.exe
 ```
 
-The Windows builder uses **PyInstaller** in one-file, windowed mode and includes imported tray/theme dependencies automatically.
-
-Windows executable metadata includes:
-
-- CompanyName: `Hubuntu OS Project`
-- ProductName: `AutoShutdown`
-- FileDescription: `AutoShutdown desktop utility`
-- FileVersion / ProductVersion: supplied build version
-- OriginalFilename: `AutoShutdown.exe`
-- License metadata: MIT
+The Windows executable includes product/version metadata. A dedicated Windows icon and conventional installer remain part of the release-polish work.
 
 ---
 
-# Automatic GitHub Builds
+# Snap package / Ubuntu App Center
 
-The repository includes:
+The repository now contains:
 
 ```text
-.github/workflows/build-release.yml
+snap/snapcraft.yaml
 ```
 
-GitHub Actions builds and validates versioned artifacts for Linux and Windows.
-
-A release tag such as:
+Build the snap from the repository root:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+sudo snap install snapcraft --classic
+snapcraft
 ```
 
-produces versioned build artifacts through the workflow.
+AutoShutdown currently requests **classic confinement** because its purpose requires broad interaction with system power commands and other running processes. Publishing a classic snap may require Snap Store review/approval.
+
+After the Snap name is registered and the package is accepted in the Snap Store, the same Snap listing can be discoverable through Ubuntu's graphical software/App Center experience where Snap Store content is enabled.
+
+Typical publishing flow after Store setup:
+
+```bash
+snapcraft login
+snapcraft register autoshutdown
+snapcraft upload --release=edge autoshutdown_*.snap
+```
+
+Promote to stable only after testing:
+
+```bash
+snapcraft release autoshutdown <revision> stable
+```
+
+Store publication requires the project owner's Snapcraft/Ubuntu account and any required classic-confinement review; repository code alone cannot complete that account-side approval.
 
 ---
 
-# First Launch & App Lock
+# Desktop theme matching
 
-On first launch, AutoShutdown asks you to create an administrator password.
+AutoShutdown follows the desktop's light/dark preference.
 
-The password protects task changes, timer changes, application selection, restrictions, cancellation and password changes.
+- Hubuntu / Ubuntu / GNOME: `gsettings` colour preference, with GTK theme fallback
+- Windows: application theme preference from the current user's Windows theme settings
 
-The original password is not stored as plaintext. Security configuration is stored at:
+The palette is applied to the main window, mascot panel, controls, tabs, password dialogs, and MIT License viewer.
+
+---
+
+# App Lock
+
+On first launch AutoShutdown asks for an administrator password. The original password is not stored in plaintext.
+
+Configuration is stored in:
 
 ```text
 ~/.autoshutdown/security.json
 ```
 
-It contains a random salt and PBKDF2-SHA256 password hash.
+The app uses PBKDF2-HMAC-SHA256 with a random salt.
+
+This is application-level protection; it is not a substitute for operating-system account security or filesystem permissions.
 
 ---
 
-# Power Timer
+# Scheduler, tasks and history
 
-Choose:
+Core modules already exist for:
 
-- `shutdown`
-- `restart`
-- `logout`
+- multiple simultaneous in-process tasks
+- daily schedules
+- weekly schedules and weekday selection
+- persistent schedules
+- enable/disable schedule entries
+- persistent task history
+- user-level startup integration
 
-Then choose a preset or enter a duration such as:
+The GUI integration layer is implemented through `advanced_controller.py` and is being connected into the compact themed interface.
+
+Persistent data lives under:
 
 ```text
-30s
-5m
-15m
-30m
-1h
-2h
-3h
+~/.autoshutdown/
 ```
-
-Press **START** to activate the timer. Press **STOP** to cancel a supported active task.
 
 ---
 
-# Timed Close App
+# GitHub Actions
 
-The **Close App** tab closes a selected process when the timer expires.
-
-Examples:
+The repository includes automated Linux and Windows build jobs in:
 
 ```text
-notepad.exe
-firefox.exe
-firefox
-gnome-text-editor
+.github/workflows/build-release.yml
 ```
 
-Applications can contain unsaved work when they are closed.
-
----
-
-# Timed Restrict App
-
-The **Restrict** tab temporarily prevents a selected process from staying open.
-
-You choose:
-
-1. application / process
-2. delay before restriction starts
-3. restriction duration
-
-During the restriction window, AutoShutdown checks for the matching process and closes it when detected.
-
-This is a temporary runtime restriction. It does not permanently alter registry policy, permissions or operating-system security policy.
-
----
-
-# Platform Behaviour
-
-## Linux
-
-AutoShutdown uses:
-
-- shutdown / restart: `shutdown`
-- logout: `loginctl`
-- process control: `psutil`
-- tray integration: `pystray`
-- desktop theme preference: GNOME `gsettings`
-
-Some Linux environments may require appropriate system permissions for power-management operations.
-
-## Windows
-
-AutoShutdown uses:
-
-- shutdown: `shutdown /s`
-- restart: `shutdown /r`
-- logout: `shutdown /l`
-- cancel scheduled shutdown/restart: `shutdown /a`
-- process control: `psutil`
-- tray integration: `pystray`
-- desktop theme preference: Windows user theme settings
-
----
-
-# CLI Mode
+Release tags follow the normal form:
 
 ```bash
-python autoshutdown.py shutdown --in 30m
-python autoshutdown.py shutdown --at 23:30
-python autoshutdown.py restart --in 10m
-python autoshutdown.py logout --in 15m
-python autoshutdown.py cancel
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
-Safe command preview:
-
-```bash
-python autoshutdown.py shutdown --in 5m --dry-run
-```
+GitHub Releases are also the canonical update-check source used by AutoShutdown.
 
 ---
 
-# Hubuntu OS Ecosystem
-
-AutoShutdown is one of the small focused tools developed around the wider **Hubuntu OS software direction**.
-
-```text
-Hubuntu OS
-   │
-   ├── focused utilities
-   │      ├── AutoShutdown
-   │      ├── system tools
-   │      ├── desktop utilities
-   │      └── future Hubuntu applications
-   │
-   └── integrated desktop ecosystem
-```
-
-Each utility should remain small and understandable on its own while fitting naturally into the wider Hubuntu desktop environment.
-
----
-
-# Development Status
+# Development status
 
 | Feature | Status |
 |---|---|
 | Linux source build | ✅ |
 | Windows source build | ✅ |
-| Timed shutdown / restart / logout | ✅ |
-| Timed close app | ✅ |
-| Timed restrict app | ✅ |
-| Live countdown | ✅ |
+| Shutdown / restart / logout | ✅ |
+| Close / Restrict App | ✅ |
 | Password App Lock | ✅ |
-| Compact GUI | ✅ |
-| Desktop light/dark tone matching | ✅ |
-| In-app MIT License viewer | ✅ |
-| Animated cat mascot | ✅ |
+| Desktop theme matching | ✅ |
+| System tray / notifications | ✅ |
+| In-app MIT License | ✅ |
 | Debian `.deb` builder | ✅ Tested on Hubuntu |
-| Linux package upgrade | ✅ 0.2.0 → 0.2.1 tested |
-| Linux desktop launcher/icon | ✅ |
-| Standalone Windows `.exe` builder | ✅ |
-| Windows executable metadata | ✅ |
-| GitHub Actions artifact validation | ✅ |
-| System tray | ✅ Initial cross-platform build |
-| Hide to Tray | ✅ |
-| Tray task status | ✅ |
-| Desktop timer warnings | ✅ Initial build |
+| Windows `.exe` builder | ✅ |
+| Multiple-task core | ✅ |
+| Daily / weekly scheduler core | ✅ |
+| Startup integration core | ✅ |
+| Persistent history core | ✅ |
+| GitHub Release update checker | ✅ |
+| Git source auto-update | ✅ |
+| Snap packaging definition | ✅ Initial build |
+| Advanced GUI integration | In progress |
+| Snap Store publication | Account/review step required |
 | Windows application icon | Planned |
 | Windows installer | Planned |
-| Multiple simultaneous tasks | Core added; UI integration pending |
-| Daily / weekly scheduler | Core added; UI integration pending |
-| Startup integration | Core added; UI integration pending |
-| Persistent task history | Core added; UI integration pending |
-
----
-
-# Current Development Direction
-
-The core modules for the next major phase have already been added:
-
-- `core/task_manager.py`
-- `core/scheduler_store.py`
-- `core/startup.py`
-- `core/history_store.py`
-
-The next GUI integration phase will expose these through dedicated **Tasks**, **Schedule**, **History** and **Settings** tabs.
-
----
-
-# Updating Source Installs
-
-Linux:
-
-```bash
-cd ~/autoshutdown
-git pull
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-./linux/run.sh
-```
-
-Windows:
-
-```powershell
-cd autoshutdown
-git pull
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\windows\run.bat
-```
+| Signed package auto-upgrade | Planned |
 
 ---
 
@@ -519,5 +368,5 @@ AutoShutdown is released under the **MIT License**.
 
 The complete license text is available in:
 
-- the repository `LICENSE` file
-- the application's **About → View License** window
+- `LICENSE`
+- **About → View License** inside AutoShutdown
