@@ -16,6 +16,7 @@ from tkinter import filedialog, messagebox, ttk
 import psutil
 
 import autoshutdown
+from desktop_integration import DesktopIntegration
 
 APP_DIR = Path.home() / ".autoshutdown"
 SECURITY_FILE = APP_DIR / "security.json"
@@ -103,10 +104,13 @@ class AutoShutdownGUI(tk.Tk):
         self._task_active = False
         self._countdown_deadline: float | None = None
         self._countdown_label = "No active task"
+        self._warning_sent = False
         self._cat_shift = 0
+        self.desktop = DesktopIntegration(self)
 
         self._build_style()
         self._build_ui()
+        self.desktop.start()
         self.after(120, self._ensure_password)
         self.after(450, self._animate_cat)
         self.after(200, self._update_countdown)
@@ -133,13 +137,12 @@ class AutoShutdownGUI(tk.Tk):
         left = tk.Frame(root, width=180, bg="#111317")
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
-
         tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 10, "bold")).pack(pady=(7, 1))
         self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg="#111317", fg="#f0f0f0", font=("DejaVu Sans Mono", 5))
         self.cat_label.pack(padx=2, pady=(0, 1))
         self.cat_message = tk.StringVar(value="guardian ready")
         tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 8)).pack(pady=1)
-        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=6)
+        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ TRAY ] [ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=6)
 
         main = ttk.Frame(root, padding=(8, 0, 0, 0))
         main.pack(side="left", fill="both", expand=True)
@@ -150,6 +153,7 @@ class AutoShutdownGUI(tk.Tk):
         self.lock_button = ttk.Button(header, text="Unlock", width=7, command=self.unlock_app)
         self.lock_button.pack(side="right")
         ttk.Button(header, text="Password", width=8, command=self.change_password).pack(side="right", padx=(0, 3))
+        ttk.Button(header, text="Tray", width=6, command=self.hide_to_tray).pack(side="right", padx=(0, 3))
 
         status_box = ttk.Frame(main)
         status_box.pack(fill="x", pady=(2, 3))
@@ -187,13 +191,11 @@ class AutoShutdownGUI(tk.Tk):
         tab = ttk.Frame(self.notebook, padding=6)
         self.notebook.add(tab, text="Power")
         ttk.Label(tab, text="Timed Shutdown / Logout", style="Section.TLabel").pack(anchor="w", pady=(0, 3))
-
         row = ttk.Frame(tab)
         row.pack(fill="x", pady=2)
         ttk.Label(row, text="Action", width=11).pack(side="left")
         self.power_action = tk.StringVar(value="shutdown")
         ttk.Combobox(row, textvariable=self.power_action, values=("shutdown", "restart", "logout"), state="readonly", width=12).pack(side="left")
-
         self.power_delay = self._duration_row(tab, "Run after", "30m")
         ttk.Button(tab, text="START", width=8, style="Start.TButton", command=self.schedule_power).pack(anchor="w", pady=(4, 0))
 
@@ -242,14 +244,12 @@ class AutoShutdownGUI(tk.Tk):
         dialog.transient(self)
         dialog.resizable(False, False)
         dialog.grab_set()
-
         result: dict[str, str | None] = {"value": None}
         frame = ttk.Frame(dialog, padding=10)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text=prompt).pack(anchor="w")
         entry = ttk.Entry(frame, show="*", width=24)
         entry.pack(fill="x", pady=(5, 8))
-
         buttons = ttk.Frame(frame)
         buttons.pack(anchor="e")
 
@@ -264,10 +264,8 @@ class AutoShutdownGUI(tk.Tk):
         ttk.Button(buttons, text="OK", width=7, command=submit).pack(side="right", padx=(0, 4))
         dialog.bind("<Return>", lambda _e: submit())
         dialog.bind("<Escape>", lambda _e: cancel())
-
         dialog.update_idletasks()
-        width = 285
-        height = 120
+        width, height = 285, 120
         x = self.winfo_rootx() + max(0, (self.winfo_width() - width) // 2)
         y = self.winfo_rooty() + max(0, (self.winfo_height() - height) // 2)
         dialog.geometry(f"{width}x{height}+{x}+{y}")
@@ -284,7 +282,7 @@ class AutoShutdownGUI(tk.Tk):
         while not password_is_configured():
             first = self._ask_password("New Password", "Enter password")
             if first is None:
-                self.destroy()
+                self.exit_application(force=True)
                 return
             if len(first) < 6:
                 messagebox.showerror("Too Short", "Use at least 6 characters.")
@@ -319,6 +317,7 @@ class AutoShutdownGUI(tk.Tk):
     def _require_unlock(self) -> bool:
         if self._unlocked:
             return True
+        self.show_window()
         messagebox.showwarning("Locked", "Unlock AutoShutdown before making changes.")
         return False
 
@@ -350,23 +349,36 @@ class AutoShutdownGUI(tk.Tk):
         self._task_active = True
         self._countdown_deadline = time.monotonic() + max(0, seconds)
         self._countdown_label = label
+        self._warning_sent = False
         self.state_var.set("ACTIVE")
         self.task_var.set(label)
         self.cat_message.set("timer running")
+        self.desktop.set_title(f"{label} - {clock_text(seconds)}")
+        self.desktop.notify("AutoShutdown", f"{label} scheduled in {clock_text(seconds)}.")
 
     def _finish_task(self, message: str = "Ready.") -> None:
+        was_active = self._task_active
         self._task_active = False
         self._countdown_deadline = None
+        self._warning_sent = False
         self.state_var.set("READY")
         self.countdown_var.set("00:00:00")
         self.task_var.set("No active task")
         self._set_status(message)
         self.cat_message.set("settings unlocked" if self._unlocked else "guardian ready")
+        self.desktop.set_title("Ready")
+        if was_active and message != "Ready.":
+            self.desktop.notify("AutoShutdown", message)
 
     def _update_countdown(self) -> None:
         if self._task_active and self._countdown_deadline is not None:
             remaining = max(0, int(self._countdown_deadline - time.monotonic() + 0.999))
-            self.countdown_var.set(clock_text(remaining))
+            text = clock_text(remaining)
+            self.countdown_var.set(text)
+            self.desktop.set_title(f"{self._countdown_label} - {text}")
+            if 0 < remaining <= 60 and not self._warning_sent:
+                self._warning_sent = True
+                self.desktop.notify("AutoShutdown warning", f"{self._countdown_label} in {text}.")
         self.after(200, self._update_countdown)
 
     def _animate_cat(self) -> None:
@@ -481,12 +493,52 @@ class AutoShutdownGUI(tk.Tk):
             pass
         self._finish_task("Task stopped.")
 
+    def hide_to_tray(self) -> None:
+        if self.desktop.available:
+            self.withdraw()
+            self._set_status("Running in system tray.")
+            self.desktop.notify("AutoShutdown", "AutoShutdown is still running in the system tray.")
+        else:
+            self.iconify()
+            self._set_status("Tray support is unavailable; window minimized.")
+
+    def show_window(self) -> None:
+        self.deiconify()
+        self.lift()
+        try:
+            self.focus_force()
+        except tk.TclError:
+            pass
+
+    def tray_stop_task(self) -> None:
+        self.show_window()
+        if self._task_active:
+            self.cancel_active_task()
+        else:
+            self._set_status("No active task.")
+
+    def exit_application(self, force: bool = False) -> None:
+        self.show_window()
+        if self._task_active and not force:
+            if not messagebox.askyesno("Exit AutoShutdown?", "Exit will stop the active AutoShutdown task. Continue?"):
+                return
+        self._cancel_event.set()
+        if self._task_active:
+            try:
+                autoshutdown.run_command(autoshutdown.command_for("cancel"), False)
+            except Exception:
+                pass
+        self.desktop.stop()
+        self.destroy()
+
     def _set_status(self, text: str) -> None:
         self.status_var.set(text)
 
     def _on_close(self) -> None:
-        self._cancel_event.set()
-        self.destroy()
+        if self.desktop.available:
+            self.hide_to_tray()
+        else:
+            self.exit_application()
 
 
 def main() -> None:
