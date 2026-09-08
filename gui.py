@@ -17,6 +17,7 @@ import psutil
 
 import autoshutdown
 from desktop_integration import DesktopIntegration
+from desktop_theme import palette as desktop_palette
 
 APP_DIR = Path.home() / ".autoshutdown"
 SECURITY_FILE = APP_DIR / "security.json"
@@ -46,8 +47,31 @@ CAT_ART = """⠀⠀⠀⠀⢠⡶⠚⢷⣤⡀⠀⠀⠀⠀⠀⣲⡶⠛⠻⣆
 ABOUT_TEXT = (
     "Hubuntu OS is the foundation behind AutoShutdown and a growing family of small, focused utilities.\n\n"
     "Built on Ubuntu/Linux, Hubuntu is designed as a practical desktop platform where lightweight tools can be created, tested and integrated into one consistent environment.\n\n"
-    "AutoShutdown follows that idea: one small utility, one clear purpose, minimal overhead. Future Hubuntu utilities can follow the same approach for system control, productivity, monitoring and desktop automation."
+    "AutoShutdown follows that idea: one small utility, one clear purpose, minimal overhead."
 )
+
+MIT_LICENSE_TEXT = """MIT License
+
+Copyright (c) 2026 Mohd Haniff
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 
 
 def _hash_password(password: str, salt: bytes, iterations: int = PBKDF2_ITERATIONS) -> str:
@@ -94,9 +118,11 @@ class AutoShutdownGUI(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
+        self.colors = desktop_palette()
         self.title("AutoShutdown")
         self.geometry("760x370")
         self.minsize(720, 350)
+        self.configure(bg=self.colors["bg"])
 
         self._cancel_event = threading.Event()
         self._worker: threading.Thread | None = None
@@ -117,32 +143,49 @@ class AutoShutdownGUI(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_style(self) -> None:
+        c = self.colors
         style = ttk.Style(self)
         try:
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("Title.TLabel", font=("TkDefaultFont", 15, "bold"))
-        style.configure("Section.TLabel", font=("TkDefaultFont", 10, "bold"))
-        style.configure("Countdown.TLabel", font=("TkFixedFont", 20, "bold"))
-        style.configure("State.TLabel", font=("TkDefaultFont", 9, "bold"))
+
+        style.configure("TFrame", background=c["bg"])
+        style.configure("TLabel", background=c["bg"], foreground=c["fg"])
+        style.configure("Title.TLabel", background=c["bg"], foreground=c["fg"], font=("TkDefaultFont", 15, "bold"))
+        style.configure("Section.TLabel", background=c["bg"], foreground=c["fg"], font=("TkDefaultFont", 10, "bold"))
+        style.configure("Countdown.TLabel", background=c["bg"], foreground=c["fg"], font=("TkFixedFont", 20, "bold"))
+        style.configure("State.TLabel", background=c["bg"], foreground=c["fg"], font=("TkDefaultFont", 9, "bold"))
+        style.configure("TButton", background=c["surface_alt"], foreground=c["fg"], bordercolor=c["border"], lightcolor=c["surface_alt"], darkcolor=c["surface_alt"])
+        style.map("TButton", background=[("active", c["select"]), ("pressed", c["select"])], foreground=[("active", c["select_fg"])])
         style.configure("Start.TButton", font=("TkDefaultFont", 9, "bold"), padding=(9, 3))
         style.configure("Stop.TButton", font=("TkDefaultFont", 9, "bold"), padding=(9, 3))
-        style.configure("TNotebook.Tab", padding=(7, 2))
+        style.configure("TEntry", fieldbackground=c["surface"], foreground=c["fg"], bordercolor=c["border"], insertcolor=c["fg"])
+        style.configure("TCombobox", fieldbackground=c["surface"], background=c["surface"], foreground=c["fg"], bordercolor=c["border"], arrowcolor=c["fg"])
+        style.map("TCombobox", fieldbackground=[("readonly", c["surface"])], foreground=[("readonly", c["fg"])])
+        style.configure("TNotebook", background=c["bg"], bordercolor=c["border"])
+        style.configure("TNotebook.Tab", background=c["surface_alt"], foreground=c["fg"], padding=(7, 2))
+        style.map("TNotebook.Tab", background=[("selected", c["surface"]), ("active", c["select"])], foreground=[("selected", c["fg"]), ("active", c["select_fg"])])
+
+        self.option_add("*TCombobox*Listbox.background", c["surface"])
+        self.option_add("*TCombobox*Listbox.foreground", c["fg"])
+        self.option_add("*TCombobox*Listbox.selectBackground", c["select"])
+        self.option_add("*TCombobox*Listbox.selectForeground", c["select_fg"])
 
     def _build_ui(self) -> None:
+        c = self.colors
         root = ttk.Frame(self, padding=6)
         root.pack(fill="both", expand=True)
 
-        left = tk.Frame(root, width=180, bg="#111317")
+        left = tk.Frame(root, width=180, bg=c["cat_bg"], highlightthickness=1, highlightbackground=c["border"])
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
-        tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 10, "bold")).pack(pady=(7, 1))
-        self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg="#111317", fg="#f0f0f0", font=("DejaVu Sans Mono", 5))
+        tk.Label(left, text="AUTOSHUTDOWN", bg=c["cat_bg"], fg=c["cat_fg"], font=("TkFixedFont", 10, "bold")).pack(pady=(7, 1))
+        self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg=c["cat_bg"], fg=c["cat_fg"], font=("DejaVu Sans Mono", 5))
         self.cat_label.pack(padx=2, pady=(0, 1))
         self.cat_message = tk.StringVar(value="guardian ready")
-        tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 8)).pack(pady=1)
-        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ TRAY ] [ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=6)
+        tk.Label(left, textvariable=self.cat_message, bg=c["cat_bg"], fg=c["cat_muted"], font=("TkFixedFont", 8)).pack(pady=1)
+        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ TRAY ] [ PASSWORD ]", bg=c["cat_bg"], fg=c["cat_muted"], font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=6)
 
         main = ttk.Frame(root, padding=(8, 0, 0, 0))
         main.pack(side="left", fill="both", expand=True)
@@ -173,7 +216,7 @@ class AutoShutdownGUI(tk.Tk):
 
         footer = ttk.Frame(main)
         footer.pack(fill="x", pady=(3, 0))
-        self.status_var = tk.StringVar(value="Ready.")
+        self.status_var = tk.StringVar(value=f"Ready. Theme: {self.colors['mode']}.")
         ttk.Label(footer, textvariable=self.status_var, font=("TkDefaultFont", 8)).pack(side="left", fill="x", expand=True)
         ttk.Button(footer, text="STOP", width=7, style="Stop.TButton", command=self.cancel_active_task).pack(side="right")
 
@@ -221,6 +264,45 @@ class AutoShutdownGUI(tk.Tk):
         self.notebook.add(tab, text="About")
         ttk.Label(tab, text="Hubuntu OS", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
         ttk.Label(tab, text=ABOUT_TEXT, wraplength=535, justify="left", font=("TkDefaultFont", 8)).pack(anchor="w")
+        row = ttk.Frame(tab)
+        row.pack(fill="x", pady=(6, 0))
+        ttk.Label(row, text="License: MIT", font=("TkDefaultFont", 8, "bold")).pack(side="left")
+        ttk.Button(row, text="View License", width=11, command=self._show_license).pack(side="right")
+
+    def _show_license(self) -> None:
+        c = self.colors
+        dialog = tk.Toplevel(self)
+        dialog.title("MIT License")
+        dialog.transient(self)
+        dialog.geometry("610x390")
+        dialog.minsize(500, 300)
+        dialog.configure(bg=c["bg"])
+
+        frame = ttk.Frame(dialog, padding=8)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text="MIT License", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
+
+        text_frame = ttk.Frame(frame)
+        text_frame.pack(fill="both", expand=True)
+        scroll = ttk.Scrollbar(text_frame, orient="vertical")
+        text = tk.Text(
+            text_frame,
+            wrap="word",
+            yscrollcommand=scroll.set,
+            bg=c["surface"],
+            fg=c["fg"],
+            insertbackground=c["fg"],
+            relief="flat",
+            padx=8,
+            pady=8,
+            font=("TkFixedFont", 9),
+        )
+        scroll.configure(command=text.yview)
+        scroll.pack(side="right", fill="y")
+        text.pack(side="left", fill="both", expand=True)
+        text.insert("1.0", MIT_LICENSE_TEXT)
+        text.configure(state="disabled")
+        ttk.Button(frame, text="Close", width=8, command=dialog.destroy).pack(anchor="e", pady=(6, 0))
 
     def _process_picker(self, parent: ttk.Frame) -> tk.StringVar:
         row = ttk.Frame(parent)
@@ -244,6 +326,7 @@ class AutoShutdownGUI(tk.Tk):
         dialog.transient(self)
         dialog.resizable(False, False)
         dialog.grab_set()
+        dialog.configure(bg=self.colors["bg"])
         result: dict[str, str | None] = {"value": None}
         frame = ttk.Frame(dialog, padding=10)
         frame.pack(fill="both", expand=True)
