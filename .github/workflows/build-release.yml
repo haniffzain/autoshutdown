@@ -1,0 +1,49 @@
+name: Build AutoShutdown
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  linux-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Debian package
+        run: |
+          chmod +x linux/build-deb.sh
+          ./linux/build-deb.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Upload Debian artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoShutdown-Linux-DEB
+          path: dist/*.deb
+
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build standalone EXE
+        shell: powershell
+        run: .\windows\build.ps1
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoShutdown-Windows-EXE
+          path: dist/AutoShutdown.exe
