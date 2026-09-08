@@ -88,8 +88,8 @@ class AutoShutdownGUI(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("AutoShutdown")
-        self.geometry("900x560")
-        self.minsize(820, 520)
+        self.geometry("760x450")
+        self.minsize(720, 420)
 
         self._cancel_event = threading.Event()
         self._worker: threading.Thread | None = None
@@ -112,46 +112,47 @@ class AutoShutdownGUI(tk.Tk):
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("Title.TLabel", font=("TkDefaultFont", 18, "bold"))
-        style.configure("Section.TLabel", font=("TkDefaultFont", 11, "bold"))
-        style.configure("Countdown.TLabel", font=("TkFixedFont", 26, "bold"))
-        style.configure("State.TLabel", font=("TkDefaultFont", 10, "bold"))
-        style.configure("Start.TButton", font=("TkDefaultFont", 10, "bold"), padding=(14, 7))
-        style.configure("Stop.TButton", font=("TkDefaultFont", 10, "bold"), padding=(14, 7))
+        style.configure("Title.TLabel", font=("TkDefaultFont", 15, "bold"))
+        style.configure("Section.TLabel", font=("TkDefaultFont", 10, "bold"))
+        style.configure("Countdown.TLabel", font=("TkFixedFont", 20, "bold"))
+        style.configure("State.TLabel", font=("TkDefaultFont", 9, "bold"))
+        style.configure("Start.TButton", font=("TkDefaultFont", 9, "bold"), padding=(10, 4))
+        style.configure("Stop.TButton", font=("TkDefaultFont", 9, "bold"), padding=(10, 4))
+        style.configure("TNotebook.Tab", padding=(8, 3))
 
     def _build_ui(self) -> None:
-        root = ttk.Frame(self, padding=10)
+        root = ttk.Frame(self, padding=6)
         root.pack(fill="both", expand=True)
 
-        left = tk.Frame(root, width=230, bg="#111317")
+        left = tk.Frame(root, width=180, bg="#111317")
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
 
-        tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 12, "bold")).pack(pady=(14, 4))
-        self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg="#111317", fg="#f0f0f0", font=("DejaVu Sans Mono", 6))
-        self.cat_label.pack(padx=6, pady=(2, 4))
+        tk.Label(left, text="AUTOSHUTDOWN", bg="#111317", fg="white", font=("TkFixedFont", 10, "bold")).pack(pady=(8, 2))
+        self.cat_label = tk.Label(left, text=CAT_ART, justify="left", bg="#111317", fg="#f0f0f0", font=("DejaVu Sans Mono", 5))
+        self.cat_label.pack(padx=2, pady=(0, 2))
         self.cat_message = tk.StringVar(value="guardian ready")
-        tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 9)).pack(pady=4)
-        tk.Label(left, text="[ TIMER ]  [ APP GUARD ]\n[ PASSWORD PROTECTED ]", bg="#111317", fg="#969696", font=("TkFixedFont", 8), justify="left").pack(side="bottom", pady=14)
+        tk.Label(left, textvariable=self.cat_message, bg="#111317", fg="#c8c8c8", font=("TkFixedFont", 8)).pack(pady=2)
+        tk.Label(left, text="[ TIMER ] [ APP GUARD ]\n[ PASSWORD ]", bg="#111317", fg="#969696", font=("TkFixedFont", 7), justify="left").pack(side="bottom", pady=8)
 
-        main = ttk.Frame(root, padding=(12, 0, 0, 0))
+        main = ttk.Frame(root, padding=(8, 0, 0, 0))
         main.pack(side="left", fill="both", expand=True)
 
         header = ttk.Frame(main)
         header.pack(fill="x")
         ttk.Label(header, text="AutoShutdown", style="Title.TLabel").pack(side="left")
-        self.lock_button = ttk.Button(header, text="Unlock", command=self.unlock_app)
+        self.lock_button = ttk.Button(header, text="Unlock", width=8, command=self.unlock_app)
         self.lock_button.pack(side="right")
-        ttk.Button(header, text="Password", command=self.change_password).pack(side="right", padx=(0, 6))
+        ttk.Button(header, text="Password", width=9, command=self.change_password).pack(side="right", padx=(0, 4))
 
         status_box = ttk.Frame(main)
-        status_box.pack(fill="x", pady=(8, 8))
+        status_box.pack(fill="x", pady=(4, 4))
         self.state_var = tk.StringVar(value="READY")
         ttk.Label(status_box, textvariable=self.state_var, style="State.TLabel").pack(side="left")
         self.countdown_var = tk.StringVar(value="00:00:00")
-        ttk.Label(status_box, textvariable=self.countdown_var, style="Countdown.TLabel").pack(side="left", padx=(18, 14))
+        ttk.Label(status_box, textvariable=self.countdown_var, style="Countdown.TLabel").pack(side="left", padx=(10, 8))
         self.task_var = tk.StringVar(value="No active task")
-        ttk.Label(status_box, textvariable=self.task_var).pack(side="left", fill="x", expand=True)
+        ttk.Label(status_box, textvariable=self.task_var, font=("TkDefaultFont", 8)).pack(side="left", fill="x", expand=True)
 
         self.notebook = ttk.Notebook(main)
         self.notebook.pack(fill="both", expand=True)
@@ -160,59 +161,59 @@ class AutoShutdownGUI(tk.Tk):
         self._build_restrict_tab()
 
         footer = ttk.Frame(main)
-        footer.pack(fill="x", pady=(8, 0))
+        footer.pack(fill="x", pady=(4, 0))
         self.status_var = tk.StringVar(value="Ready.")
-        ttk.Label(footer, textvariable=self.status_var).pack(side="left", fill="x", expand=True)
-        ttk.Button(footer, text="STOP", style="Stop.TButton", command=self.cancel_active_task).pack(side="right")
+        ttk.Label(footer, textvariable=self.status_var, font=("TkDefaultFont", 8)).pack(side="left", fill="x", expand=True)
+        ttk.Button(footer, text="STOP", width=8, style="Stop.TButton", command=self.cancel_active_task).pack(side="right")
 
     def _duration_row(self, parent: ttk.Frame, label: str, default: str) -> tk.StringVar:
         row = ttk.Frame(parent)
-        row.pack(fill="x", pady=5)
-        ttk.Label(row, text=label, width=14).pack(side="left")
+        row.pack(fill="x", pady=3)
+        ttk.Label(row, text=label, width=11).pack(side="left")
         value = tk.StringVar(value=default)
-        ttk.Entry(row, textvariable=value, width=10).pack(side="left")
+        ttk.Entry(row, textvariable=value, width=8).pack(side="left")
         for text, duration in TIME_PRESETS:
-            ttk.Button(row, text=text, width=4, command=lambda d=duration, v=value: v.set(d)).pack(side="left", padx=(4, 0))
+            ttk.Button(row, text=text, width=3, command=lambda d=duration, v=value: v.set(d)).pack(side="left", padx=(2, 0))
         return value
 
     def _build_power_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=12)
+        tab = ttk.Frame(self.notebook, padding=7)
         self.notebook.add(tab, text="Power")
-        ttk.Label(tab, text="Timed Shutdown / Logout", style="Section.TLabel").pack(anchor="w", pady=(0, 8))
+        ttk.Label(tab, text="Timed Shutdown / Logout", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
 
         row = ttk.Frame(tab)
-        row.pack(fill="x", pady=5)
-        ttk.Label(row, text="Action", width=14).pack(side="left")
+        row.pack(fill="x", pady=3)
+        ttk.Label(row, text="Action", width=11).pack(side="left")
         self.power_action = tk.StringVar(value="shutdown")
-        ttk.Combobox(row, textvariable=self.power_action, values=("shutdown", "restart", "logout"), state="readonly", width=14).pack(side="left")
+        ttk.Combobox(row, textvariable=self.power_action, values=("shutdown", "restart", "logout"), state="readonly", width=12).pack(side="left")
 
         self.power_delay = self._duration_row(tab, "Run after", "30m")
-        ttk.Button(tab, text="START", style="Start.TButton", command=self.schedule_power).pack(anchor="w", pady=(10, 0))
+        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_power).pack(anchor="w", pady=(6, 0))
 
     def _build_close_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=12)
+        tab = ttk.Frame(self.notebook, padding=7)
         self.notebook.add(tab, text="Close App")
-        ttk.Label(tab, text="Timed Close App", style="Section.TLabel").pack(anchor="w", pady=(0, 8))
+        ttk.Label(tab, text="Timed Close App", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
         self.close_process = self._process_picker(tab)
         self.close_delay = self._duration_row(tab, "Close after", "15m")
-        ttk.Button(tab, text="START", style="Start.TButton", command=self.schedule_close_app).pack(anchor="w", pady=(10, 0))
+        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_close_app).pack(anchor="w", pady=(6, 0))
 
     def _build_restrict_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(tab, text="Restrict App")
-        ttk.Label(tab, text="Timed Restrict App", style="Section.TLabel").pack(anchor="w", pady=(0, 8))
+        tab = ttk.Frame(self.notebook, padding=7)
+        self.notebook.add(tab, text="Restrict")
+        ttk.Label(tab, text="Timed Restrict App", style="Section.TLabel").pack(anchor="w", pady=(0, 4))
         self.restrict_process = self._process_picker(tab)
         self.restrict_start = self._duration_row(tab, "Start after", "5m")
         self.restrict_duration = self._duration_row(tab, "Restrict for", "1h")
-        ttk.Button(tab, text="START", style="Start.TButton", command=self.schedule_restrict_app).pack(anchor="w", pady=(10, 0))
+        ttk.Button(tab, text="START", width=9, style="Start.TButton", command=self.schedule_restrict_app).pack(anchor="w", pady=(6, 0))
 
     def _process_picker(self, parent: ttk.Frame) -> tk.StringVar:
         row = ttk.Frame(parent)
-        row.pack(fill="x", pady=5)
-        ttk.Label(row, text="Application", width=14).pack(side="left")
+        row.pack(fill="x", pady=3)
+        ttk.Label(row, text="Application", width=11).pack(side="left")
         value = tk.StringVar()
-        ttk.Entry(row, textvariable=value, width=24).pack(side="left", fill="x", expand=True)
-        ttk.Button(row, text="Browse", command=lambda: self._browse_process(value)).pack(side="left", padx=(6, 0))
+        ttk.Entry(row, textvariable=value, width=20).pack(side="left", fill="x", expand=True)
+        ttk.Button(row, text="Browse", width=7, command=lambda: self._browse_process(value)).pack(side="left", padx=(4, 0))
         return value
 
     def _browse_process(self, variable: tk.StringVar) -> None:
