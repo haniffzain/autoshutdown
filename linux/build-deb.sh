@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-VERSION="${1:-0.2.0}"
+VERSION="${1:-0.4.0}"
 ARCH="${2:-all}"
 PKG="autoshutdown_${VERSION}_${ARCH}"
 BUILD_DIR="$ROOT_DIR/dist/deb/$PKG"
@@ -12,7 +12,7 @@ BUILD_DIR="$ROOT_DIR/dist/deb/$PKG"
 rm -rf "$BUILD_DIR"
 mkdir -p \
   "$BUILD_DIR/DEBIAN" \
-  "$BUILD_DIR/opt/autoshutdown" \
+  "$BUILD_DIR/opt/autoshutdown/core" \
   "$BUILD_DIR/usr/bin" \
   "$BUILD_DIR/usr/share/applications" \
   "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps"
@@ -21,6 +21,10 @@ install -m 0644 gui.py "$BUILD_DIR/opt/autoshutdown/gui.py"
 install -m 0644 autoshutdown.py "$BUILD_DIR/opt/autoshutdown/autoshutdown.py"
 install -m 0644 desktop_integration.py "$BUILD_DIR/opt/autoshutdown/desktop_integration.py"
 install -m 0644 desktop_theme.py "$BUILD_DIR/opt/autoshutdown/desktop_theme.py"
+install -m 0644 advanced_controller.py "$BUILD_DIR/opt/autoshutdown/advanced_controller.py"
+install -m 0644 version.py "$BUILD_DIR/opt/autoshutdown/version.py"
+install -m 0644 update.py "$BUILD_DIR/opt/autoshutdown/update.py"
+install -m 0644 core/*.py "$BUILD_DIR/opt/autoshutdown/core/"
 install -m 0644 assets/autoshutdown.svg "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/autoshutdown.svg"
 
 cat > "$BUILD_DIR/DEBIAN/control" <<EOF
@@ -29,13 +33,14 @@ Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $ARCH
-Depends: python3 (>= 3.10), python3-tk, python3-psutil, python3-pil, python3-pystray
+Depends: python3 (>= 3.10), python3-tk, python3-psutil, python3-pil, python3-pystray, git
 Maintainer: Hubuntu OS Project
 Homepage: https://github.com/haniffzain/autoshutdown
 Description: Compact timed shutdown and application-control utility
  AutoShutdown provides timed shutdown, restart, logout, close-app,
- temporary restrict-app, notifications, system-tray controls and automatic
- desktop light/dark theme matching through a compact desktop interface.
+ temporary restrict-app, scheduler, history, startup integration,
+ update checking, notifications, system-tray controls and automatic
+ desktop light/dark theme matching.
 EOF
 
 cat > "$BUILD_DIR/usr/bin/autoshutdown" <<'EOF'
@@ -43,6 +48,12 @@ cat > "$BUILD_DIR/usr/bin/autoshutdown" <<'EOF'
 exec python3 /opt/autoshutdown/gui.py "$@"
 EOF
 chmod 0755 "$BUILD_DIR/usr/bin/autoshutdown"
+
+cat > "$BUILD_DIR/usr/bin/autoshutdown-update" <<'EOF'
+#!/usr/bin/env bash
+exec python3 /opt/autoshutdown/update.py "$@"
+EOF
+chmod 0755 "$BUILD_DIR/usr/bin/autoshutdown-update"
 
 cat > "$BUILD_DIR/usr/share/applications/autoshutdown.desktop" <<EOF
 [Desktop Entry]
